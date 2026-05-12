@@ -188,7 +188,40 @@ export default function App() {
                       data={activeMatrix} 
                       label={mode === 'compatibility' ? "Matryca Związku" : (person1.name || "Moja Matryca")}
                       isCompatibility={mode === 'compatibility'} 
+                      onPointClick={(label, value) => setActiveTip({ label, value })}
                     />
+
+                    {/* QUICK INSIGHT MODAL / OVERLAY */}
+                    <AnimatePresence>
+                      {activeTip && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="bg-white/95 backdrop-blur-xl border border-purple-200 rounded-[2.5rem] p-8 shadow-2xl shadow-purple-200/50 max-w-[400px] absolute z-[100] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                        >
+                          <button 
+                            onClick={() => setActiveTip(null)}
+                            className="absolute top-6 right-6 w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors"
+                          >
+                             <Zap className="w-4 h-4 text-purple-600" />
+                          </button>
+                          <div className="flex gap-6 items-start">
+                             <div className="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center font-black text-white text-3xl shadow-lg shrink-0">
+                               {activeTip.value}
+                             </div>
+                             <div>
+                               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400 mb-1">{activeTip.label}</p>
+                               <h4 className="text-2xl font-black text-slate-900 mb-2">{ARCANA_NAMES[activeTip.value]}</h4>
+                               <p className="text-[11px] font-bold text-slate-500 mb-4">{ARCANA_GUIDE[activeTip.value]?.keywords}</p>
+                               <div className="p-5 bg-purple-50/50 rounded-2xl border border-purple-100 text-[13px] text-slate-700 leading-relaxed italic">
+                                  "{ARCANA_GUIDE[activeTip.value]?.advice}"
+                                </div>
+                             </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   {/* Results Bottom Detail */}
@@ -310,7 +343,7 @@ function InsightRow({ label, val }: { label: string; val: number }) {
   );
 }
 
-function MatrixSvg({ data, label, isCompatibility = false }: { data: MatrixData, label: string, isCompatibility?: boolean }) {
+function MatrixSvg({ data, label, isCompatibility = false, onPointClick }: { data: MatrixData, label: string, isCompatibility?: boolean, onPointClick?: (label: string, value: number) => void }) {
   const lineStroke = "#333333";
   
   return (
@@ -345,34 +378,34 @@ function MatrixSvg({ data, label, isCompatibility = false }: { data: MatrixData,
           <stop offset="30%" stopColor="#fbbf24" />
           <stop offset="100%" stopColor="#92400e" />
         </linearGradient>
-
+ 
         <linearGradient id="blue-bubble" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#7dd3fc" />
           <stop offset="30%" stopColor="#0284c7" />
           <stop offset="100%" stopColor="#0c4a6e" />
         </linearGradient>
-
+ 
         <linearGradient id="green-bubble" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#86efac" />
           <stop offset="30%" stopColor="#16a34a" />
           <stop offset="100%" stopColor="#064e3b" />
         </linearGradient>
-
+ 
         <linearGradient id="white-bubble" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#ffffff" />
           <stop offset="100%" stopColor="#e2e8f0" />
         </linearGradient>
-
+ 
         <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
           <path d="M 0 0 L 8 4 L 0 8 z" fill="#34495e" />
         </marker>
         <marker id="arrow-red" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
           <path d="M 0 0 L 8 4 L 0 8 z" fill="#e74c3c" />
         </marker>
-
+ 
         <path id="circle-path" d="M 250, 40 a 210,210 0 1,1 0,420 a 210,210 0 1,1 0,-420" />
       </defs>
-
+ 
       {/* Helper concentric circles */}
       <circle cx="250" cy="250" r="212" fill="none" stroke="#e2e8f0" strokeWidth="1" />
       <circle cx="250" cy="250" r="150" fill="none" stroke="#e2e8f0" strokeWidth="1" />
@@ -382,73 +415,66 @@ function MatrixSvg({ data, label, isCompatibility = false }: { data: MatrixData,
         <line x1="250" y1="38" x2="250" y2="462" />
         <line x1="38" y1="250" x2="462" y2="250" />
       </g>
-
+ 
       {/* Matrix Squares */}
       <rect x="100" y="100" width="300" height="300" fill="none" stroke={lineStroke} strokeWidth="2" />
       <rect x="100" y="100" width="300" height="300" fill="none" stroke={lineStroke} strokeWidth="2" transform="rotate(45 250 250)" />
-
+ 
       {/* Diagonal Lines (Male/Female) */}
       <g strokeWidth="2">
         <line x1="100" y1="100" x2="388" y2="388" stroke="#6366f1" strokeOpacity="0.4" markerEnd="url(#arrow-blue)" />
         <line x1="400" y1="100" x2="112" y2="388" stroke="#f43f5e" strokeOpacity="0.4" markerEnd="url(#arrow-red)" />
       </g>
-
+ 
       {/* Diagonal Labels */}
       <g className="font-black text-[8px] uppercase tracking-[0.25em]" fillOpacity="0.5">
         <text transform="translate(135, 135) rotate(45)" fill="#4f46e5">LINIA MĘSKA</text>
         <text transform="translate(365, 135) rotate(-45)" textAnchor="end" fill="#e11d48">LINIA ŻEŃSKA</text>
       </g>
-
-      {/* Age labels around perimeter */}
-      <g className="fill-slate-300 font-black text-[9px] tracking-tighter uppercase">
-        <text x="250" y="30" textAnchor="middle">0 lat</text>
-        <text x="475" y="255">20 lat</text>
-        <text x="250" y="480" textAnchor="middle">40 lat</text>
-        <text x="25" y="255" textAnchor="end">60 lat</text>
-      </g>
-
+ 
+ 
       {/* Main Points (Bubbles) */}
-      <Point x={250} y={50} value={data.B} gradient="purple-bubble" />
-      <Point x={450} y={250} value={data.C} gradient="red-bubble" />
-      <Point x={250} y={450} value={data.D} gradient="red-bubble" />
-      <Point x={50} y={250} value={data.A} gradient="purple-bubble" />
-
+      <Point x={250} y={50} value={data.B} gradient="purple-bubble" onClick={(val) => onPointClick?.('Duchowość / Niebo', val)} />
+      <Point x={450} y={250} value={data.C} gradient="red-bubble" onClick={(val) => onPointClick?.('Komfort / Rezultat', val)} />
+      <Point x={250} y={450} value={data.D} gradient="red-bubble" onClick={(val) => onPointClick?.('Karma / Ziemia', val)} />
+      <Point x={50} y={250} value={data.A} gradient="purple-bubble" onClick={(val) => onPointClick?.('Charakter główny', val)} />
+ 
       {/* Ancestral Corners */}
-      <Point x={100} y={100} value={data.F} gradient="white-bubble" border="#333" textColor="black" />
-      <Point x={400} y={100} value={data.G} gradient="white-bubble" border="#333" textColor="black" />
-      <Point x={400} y={400} value={data.H} gradient="white-bubble" border="#333" textColor="black" />
-      <Point x={100} y={400} value={data.I} gradient="white-bubble" border="#333" textColor="black" />
-
+      <Point x={100} y={100} value={data.F} gradient="white-bubble" border="#333" textColor="black" onClick={(val) => onPointClick?.('Ród Ojca (Męski)', val)} />
+      <Point x={400} y={100} value={data.G} gradient="white-bubble" border="#333" textColor="black" onClick={(val) => onPointClick?.('Ród Matki (Żeński)', val)} />
+      <Point x={400} y={400} value={data.H} gradient="white-bubble" border="#333" textColor="black" onClick={(val) => onPointClick?.('Ród Matki (Majątek)', val)} />
+      <Point x={100} y={400} value={data.I} gradient="white-bubble" border="#333" textColor="black" onClick={(val) => onPointClick?.('Ród Ojca (Majątek)', val)} />
+ 
       {/* Intermediate Sub-points (Chakra/Path Path) */}
-      <Point x={250} y={150} value={data.B1} gradient="white-bubble" border="#a855f7" textColor="#a855f7" small />
-      <Point x={250} y={100} value={data.B2} gradient="white-bubble" border="#6366f1" textColor="#6366f1" small />
+      <Point x={250} y={150} value={data.B1} gradient="white-bubble" border="#a855f7" textColor="#a855f7" small onClick={(val) => onPointClick?.('Czakra Vishuddha', val)} />
+      <Point x={250} y={100} value={data.B2} gradient="white-bubble" border="#6366f1" textColor="#6366f1" small onClick={(val) => onPointClick?.('Czakra Ajna', val)} />
       
       {/* Love Line */}
-      <Point x={325} y={325} value={data.love} gradient="white-bubble" border="#ef4444" textColor="#ef4444" small />
-      <Point x={287} y={287} value={data.love1} gradient="white-bubble" border="#f43f5e" textColor="#f43f5e" small />
-      <Point x={362} y={362} value={data.love2} gradient="white-bubble" border="#991b1b" textColor="#991b1b" small />
-
+      <Point x={325} y={325} value={data.love} gradient="white-bubble" border="#ef4444" textColor="#ef4444" small onClick={(val) => onPointClick?.('Wejście w Miłość', val)} />
+      <Point x={287} y={287} value={data.love1} gradient="white-bubble" border="#f43f5e" textColor="#f43f5e" small onClick={(val) => onPointClick?.('Relacje', val)} />
+      <Point x={362} y={362} value={data.love2} gradient="white-bubble" border="#991b1b" textColor="#991b1b" small onClick={(val) => onPointClick?.('Balans w związku', val)} />
+ 
       {/* Money Line */}
-      <Point x={325} y={175} value={data.money} gradient="white-bubble" border="#eab308" textColor="#eab308" small />
-      <Point x={287} y={212} value={data.money1} gradient="white-bubble" border="#fbbf24" textColor="#fbbf24" small />
-      <Point x={362} y={137} value={data.money2} gradient="white-bubble" border="#854d0e" textColor="#854d0e" small />
-
+      <Point x={325} y={175} value={data.money} gradient="white-bubble" border="#eab308" textColor="#eab308" small onClick={(val) => onPointClick?.('Kanał Finansowy', val)} />
+      <Point x={287} y={212} value={data.money1} gradient="white-bubble" border="#fbbf24" textColor="#fbbf24" small onClick={(val) => onPointClick?.('Przepływ pieniędzy', val)} />
+      <Point x={362} y={137} value={data.money2} gradient="white-bubble" border="#854d0e" textColor="#854d0e" small onClick={(val) => onPointClick?.('Stabilność finansowa', val)} />
+ 
       {/* Other cross points */}
-      <Point x={150} y={250} value={data.A1} gradient="white-bubble" border="#0ea5e9" textColor="#0ea5e9" small />
-      <Point x={100} y={250} value={data.A2} gradient="white-bubble" border="#38bdf8" textColor="#38bdf8" small />
+      <Point x={150} y={250} value={data.A1} gradient="white-bubble" border="#0ea5e9" textColor="#0ea5e9" small onClick={(val) => onPointClick?.('Równowaga wewnętrzna', val)} />
+      <Point x={100} y={250} value={data.A2} gradient="white-bubble" border="#38bdf8" textColor="#38bdf8" small onClick={(val) => onPointClick?.('Ekspresja siebie', val)} />
       
-      <Point x={350} y={250} value={data.C1} gradient="white-bubble" border="#fb7185" textColor="#fb7185" small />
-      <Point x={400} y={250} value={data.C2} gradient="white-bubble" border="#f43f5e" textColor="#f43f5e" small />
-
-      <Point x={250} y={350} value={data.D1} gradient="white-bubble" border="#ef4444" textColor="#ef4444" small />
-      <Point x={250} y={400} value={data.D2} gradient="white-bubble" border="#b91c1c" textColor="#b91c1c" small />
-
+      <Point x={350} y={250} value={data.C1} gradient="white-bubble" border="#fb7185" textColor="#fb7185" small onClick={(val) => onPointClick?.('Wyżyny społeczne', val)} />
+      <Point x={400} y={250} value={data.C2} gradient="white-bubble" border="#f43f5e" textColor="#f43f5e" small onClick={(val) => onPointClick?.('Wpływ na innych', val)} />
+ 
+      <Point x={250} y={350} value={data.D1} gradient="white-bubble" border="#ef4444" textColor="#ef4444" small onClick={(val) => onPointClick?.('Zadanie duszy', val)} />
+      <Point x={250} y={400} value={data.D2} gradient="white-bubble" border="#b91c1c" textColor="#b91c1c" small onClick={(val) => onPointClick?.('Fundament lekcji', val)} />
+ 
       {/* Ancestral Intermediate */}
-      <Point x={175} y={175} value={data.F1} gradient="white-bubble" border="#64748b" textColor="#64748b" small />
-      <Point x={325} y={175} value={data.G1} gradient="white-bubble" border="#64748b" textColor="#64748b" small />
-      <Point x={325} y={325} value={data.H1} gradient="white-bubble" border="#64748b" textColor="#64748b" small />
-      <Point x={175} y={325} value={data.I1} gradient="white-bubble" border="#64748b" textColor="#64748b" small />
-
+      <Point x={175} y={175} value={data.F1} gradient="white-bubble" border="#64748b" textColor="#64748b" small onClick={(val) => onPointClick?.('Potencjał rodu F', val)} />
+      <Point x={325} y={175} value={data.G1} gradient="white-bubble" border="#64748b" textColor="#64748b" small onClick={(val) => onPointClick?.('Potencjał rodu G', val)} />
+      <Point x={325} y={325} value={data.H1} gradient="white-bubble" border="#64748b" textColor="#64748b" small onClick={(val) => onPointClick?.('Potencjał rodu H', val)} />
+      <Point x={175} y={325} value={data.I1} gradient="white-bubble" border="#64748b" textColor="#64748b" small onClick={(val) => onPointClick?.('Potencjał rodu I', val)} />
+ 
       {/* Symbols */}
       <g transform="translate(345, 195) scale(0.9)" className="drop-shadow-[0_2px_10px_rgba(34,197,94,0.3)] opacity-30 group-hover:opacity-60 transition-opacity">
         <DollarSign className="stroke-green-600 stroke-[2.5px]" />
@@ -456,9 +482,12 @@ function MatrixSvg({ data, label, isCompatibility = false }: { data: MatrixData,
       <g transform="translate(305, 305) scale(0.9)" className="drop-shadow-[0_2px_10px_rgba(239,68,68,0.3)] opacity-30 group-hover:opacity-60 transition-opacity">
         <Heart className="fill-red-500/20 stroke-red-600 stroke-[2.5px]" />
       </g>
-
+ 
       {/* Center Zone Bubble */}
-      <g className="transition-transform duration-500 hover:scale-105 origin-center cursor-default group">
+      <g 
+        className="transition-transform duration-500 hover:scale-105 origin-center cursor-pointer group"
+        onClick={() => onPointClick?.('Twoje Centrum (Ja)', data.E)}
+      >
         <circle cx="250" cy="250" r="44" fill="url(#yellow-bubble)" filter="url(#glass-shadow)" />
         <circle cx="250" cy="250" r="44" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.5" />
         
@@ -478,18 +507,22 @@ function MatrixSvg({ data, label, isCompatibility = false }: { data: MatrixData,
           {data.E}
         </text>
       </g>
-
+ 
       <text x="250" y="15" textAnchor="middle" className="fill-slate-400 text-[10px] font-black uppercase tracking-[0.4em]">{label}</text>
     </svg>
   );
 }
 
-function Point({ x, y, value, color, gradient, border, small = false, textColor = "white" }: any) {
+function Point({ x, y, value, color, gradient, border, small = false, textColor = "white", onClick }: any) {
   const radius = small ? 14 : 28; // Increased size slightly for premium feel
   const arcanaName = ARCANA_NAMES[value] || '';
   
   return (
-    <g filter="url(#glass-shadow)" className="transition-transform duration-500 hover:scale-110 cursor-help origin-center group">
+    <g 
+      filter="url(#glass-shadow)" 
+      className="transition-transform duration-500 hover:scale-110 cursor-pointer origin-center group"
+      onClick={() => onClick?.(value)}
+    >
       <title>{value}: {arcanaName}</title>
       <circle 
         cx={x} cy={y} 

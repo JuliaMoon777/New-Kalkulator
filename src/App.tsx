@@ -6,7 +6,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Calendar, Users, User, Calculator, Heart, DollarSign, Zap, ScrollText, Activity } from 'lucide-react';
-import { calculateMatrix, calculateCompatibility, MatrixData, ARCANA_NAMES, reduceTo22, calculateAge } from './utils/matrixUtils';
+import { calculateMatrix, calculateCompatibility, MatrixData, ARCANA_NAMES, ARCANA_GUIDE, reduceTo22, calculateAge } from './utils/matrixUtils';
 
 type Mode = 'single' | 'compatibility';
 
@@ -19,6 +19,8 @@ export default function App() {
     m2: MatrixData | null;
     common: MatrixData | null;
   }>({ m1: null, m2: null, common: null });
+
+  const [activeTip, setActiveTip] = useState<{ label: string; value: number } | null>(null);
 
   const formatDate = (value: string) => {
     // Remove all non-digits
@@ -231,6 +233,22 @@ export default function App() {
                           val={activeMatrix.planetary}
                         />
                     </div>
+
+                    {/* INTERACTIVE TIPS / INSIGHTS */}
+                    <div className="md:col-span-2 mt-12 mb-20 bg-purple-50/50 rounded-[4rem] p-12 border border-purple-100/50 shadow-inner">
+                       <h3 className="text-xl font-black text-purple-900 mb-10 flex items-center gap-4">
+                          <ScrollText className="w-6 h-6" /> Kluczowe Wglądy (Głębokie Porady)
+                       </h3>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <InsightRow label="Twój Charakter (Centrum)" val={activeMatrix.E} />
+                          <InsightRow label="Twoja Wyższa Jaźń (Duch)" val={activeMatrix.B} />
+                          <InsightRow label="Zadanie Karmiczne" val={activeMatrix.D} />
+                          <InsightRow label="Moc Finansowa" val={activeMatrix.money} />
+                          <InsightRow label="Otwarcie Serca" val={activeMatrix.love} />
+                          <InsightRow label="Talent Rodowy" val={activeMatrix.F} />
+                       </div>
+                       <p className="mt-12 text-center text-[10px] uppercase font-black tracking-[0.2em] text-purple-300">Krótkie wskazówki systemu Matrycy Przeznaczenia — traktuj je jako drogowskaz.</p>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -259,6 +277,33 @@ export default function App() {
                </AnimatePresence>
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InsightRow({ label, val }: { label: string; val: number }) {
+  const guide = ARCANA_GUIDE[val];
+  const name = ARCANA_NAMES[val];
+  
+  if (!guide) return null;
+
+  return (
+    <div className="bg-white/40 p-6 rounded-[2.5rem] border border-white/60 shadow-sm hover:shadow-md transition-all group">
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-purple-200 shrink-0">
+          {val}
+        </div>
+        <div className="space-y-1">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+          <div className="flex items-center gap-2">
+            <h4 className="text-lg font-black text-slate-900">{name}</h4>
+          </div>
+          <p className="text-[11px] font-bold text-purple-500 mb-2">{guide.keywords}</p>
+          <div className="mt-4 p-4 bg-white/60 rounded-2xl border border-purple-50 text-xs italic text-slate-600 leading-relaxed group-hover:text-purple-700 transition-colors">
+            "{guide.advice}"
+          </div>
         </div>
       </div>
     </div>
@@ -343,19 +388,23 @@ function MatrixSvg({ data, label, isCompatibility = false }: { data: MatrixData,
       <rect x="100" y="100" width="300" height="300" fill="none" stroke={lineStroke} strokeWidth="2" transform="rotate(45 250 250)" />
 
       {/* Diagonal Lines (Male/Female) */}
-      <g strokeWidth="2.5">
-        <line x1="100" y1="100" x2="388" y2="388" stroke="#34495e" markerEnd="url(#arrow-blue)" />
-        <line x1="400" y1="100" x2="112" y2="388" stroke="#e74c3c" markerEnd="url(#arrow-red)" />
+      <g strokeWidth="2">
+        <line x1="100" y1="100" x2="388" y2="388" stroke="#6366f1" strokeOpacity="0.4" markerEnd="url(#arrow-blue)" />
+        <line x1="400" y1="100" x2="112" y2="388" stroke="#f43f5e" strokeOpacity="0.4" markerEnd="url(#arrow-red)" />
       </g>
 
       {/* Diagonal Labels */}
-      <g className="font-black text-[9px] uppercase tracking-widest" fillOpacity="0.7">
-        <text transform="translate(130, 130) rotate(45)" fill="#6366f1">LINIA MĘSKA</text>
-        <text transform="translate(370, 130) rotate(-45)" textAnchor="end" fill="#f43f5e">LINIA ŻEŃSKA</text>
+      <g className="font-black text-[8px] uppercase tracking-[0.25em]" fillOpacity="0.5">
+        <text transform="translate(135, 135) rotate(45)" fill="#4f46e5">LINIA MĘSKA</text>
+        <text transform="translate(365, 135) rotate(-45)" textAnchor="end" fill="#e11d48">LINIA ŻEŃSKA</text>
       </g>
 
       {/* Age labels around perimeter */}
-      <g fontSize="11" className="fill-slate-400 font-black tracking-tighter">
+      <g className="fill-slate-300 font-black text-[9px] tracking-tighter uppercase">
+        <text x="250" y="30" textAnchor="middle">0 lat</text>
+        <text x="475" y="255">20 lat</text>
+        <text x="250" y="480" textAnchor="middle">40 lat</text>
+        <text x="25" y="255" textAnchor="end">60 lat</text>
       </g>
 
       {/* Main Points (Bubbles) */}
@@ -401,23 +450,30 @@ function MatrixSvg({ data, label, isCompatibility = false }: { data: MatrixData,
       <Point x={175} y={325} value={data.I1} gradient="white-bubble" border="#64748b" textColor="#64748b" small />
 
       {/* Symbols */}
-      <g transform="translate(340, 200) scale(1.0)" className="drop-shadow-lg opacity-40">
-        <DollarSign className="stroke-green-500 stroke-[3px]" />
+      <g transform="translate(345, 195) scale(0.9)" className="drop-shadow-[0_2px_10px_rgba(34,197,94,0.3)] opacity-30 group-hover:opacity-60 transition-opacity">
+        <DollarSign className="stroke-green-600 stroke-[2.5px]" />
       </g>
-      <g transform="translate(315, 305) scale(1.1)" className="drop-shadow-lg opacity-40">
-        <Heart className="fill-red-500 stroke-red-600 stroke-[1px]" />
+      <g transform="translate(305, 305) scale(0.9)" className="drop-shadow-[0_2px_10px_rgba(239,68,68,0.3)] opacity-30 group-hover:opacity-60 transition-opacity">
+        <Heart className="fill-red-500/20 stroke-red-600 stroke-[2.5px]" />
       </g>
 
       {/* Center Zone Bubble */}
-      <g>
+      <g className="transition-transform duration-500 hover:scale-105 origin-center cursor-default group">
         <circle cx="250" cy="250" r="44" fill="url(#yellow-bubble)" filter="url(#glass-shadow)" />
         <circle cx="250" cy="250" r="44" fill="none" stroke="white" strokeWidth="1.5" strokeOpacity="0.5" />
-        <ellipse cx="240" cy="230" rx="20" ry="10" fill="white" fillOpacity="0.4" transform={`rotate(-10 250 250)`} />
+        
+        {/* Specular Highlights */}
+        <ellipse cx="235" cy="230" rx="18" ry="8" fill="white" fillOpacity="0.5" transform="rotate(-15 250 250)" />
+        <circle cx="272" cy="235" r="7" fill="white" fillOpacity="0.3" />
+        
+        {/* Bottom Reflection */}
+        <path d="M 220 280 Q 250 295 280 280" fill="none" stroke="white" strokeWidth="2" strokeOpacity="0.2" strokeLinecap="round" />
+        
         <text 
           x="250" y="262" 
           textAnchor="middle" 
           className="fill-slate-900 font-black text-4xl select-none"
-          style={{ textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+          style={{ textShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
         >
           {data.E}
         </text>
@@ -430,9 +486,11 @@ function MatrixSvg({ data, label, isCompatibility = false }: { data: MatrixData,
 
 function Point({ x, y, value, color, gradient, border, small = false, textColor = "white" }: any) {
   const radius = small ? 14 : 28; // Increased size slightly for premium feel
+  const arcanaName = ARCANA_NAMES[value] || '';
   
   return (
-    <g filter="url(#glass-shadow)" className="transition-transform duration-500 hover:scale-110 cursor-default origin-center">
+    <g filter="url(#glass-shadow)" className="transition-transform duration-500 hover:scale-110 cursor-help origin-center group">
+      <title>{value}: {arcanaName}</title>
       <circle 
         cx={x} cy={y} 
         r={radius} 

@@ -13,6 +13,21 @@ export interface MatrixData {
   H: number; // C+D (Ancestral BR)
   I: number; // D+A (Ancestral BL)
   
+  // Intermediate points
+  A1: number; // A+E
+  A2: number; // A+A1
+  B1: number; // B+E
+  B2: number; // B+B1
+  C1: number; // C+E
+  C2: number; // C+C1
+  D1: number; // D+E
+  D2: number; // D+D1
+
+  F1: number; // F+E
+  G1: number; // G+E
+  H1: number; // H+E
+  I1: number; // I+E
+  
   // Destinies
   sky: number; // B+D
   earth: number; // A+C
@@ -29,7 +44,11 @@ export interface MatrixData {
   internalPower: number; // Center E
   
   love: number;
+  love1: number;
+  love2: number;
   money: number;
+  money1: number;
+  money2: number;
   karmic: number;
   chakras: ChakraData[];
 }
@@ -46,7 +65,7 @@ export interface ChakraData {
  */
 export function reduceTo22(num: number): number {
   if (num === 0) return 0;
-  let result = num;
+  let result = Math.abs(num);
   while (result > 22) {
     result = String(result)
       .split('')
@@ -89,6 +108,22 @@ export function calculateMatrix(birthdate: string): MatrixData {
   const H = reduceTo22(C + D);
   const I = reduceTo22(D + A);
 
+  // Intermediate Cross Points
+  const A1 = reduceTo22(A + E);
+  const A2 = reduceTo22(A + A1);
+  const B1 = reduceTo22(B + E);
+  const B2 = reduceTo22(B + B1);
+  const C1 = reduceTo22(C + E);
+  const C2 = reduceTo22(C + C1);
+  const D1 = reduceTo22(D + E);
+  const D2 = reduceTo22(D + D1);
+
+  // Ancestral Intermediate
+  const F1 = reduceTo22(F + E);
+  const G1 = reduceTo22(G + E);
+  const H1 = reduceTo22(H + E);
+  const I1 = reduceTo22(I + E);
+
   const sky = reduceTo22(B + D);
   const earth = reduceTo22(A + C);
   const personal = reduceTo22(sky + earth);
@@ -103,62 +138,48 @@ export function calculateMatrix(birthdate: string): MatrixData {
   const ancestralStrength = reduceTo22(F + G + H + I);
   const internalPower = E;
 
-  const love = reduceTo22(E + H); 
-  const money = reduceTo22(E + G);
+  // Love Line (between E and H)
+  const love = reduceTo22(E + H); // Entry point
+  const love1 = reduceTo22(E + love);
+  const love2 = reduceTo22(H + love);
+
+  // Money Line (between E and G)
+  const money = reduceTo22(E + G); // Entry point
+  const money1 = reduceTo22(E + money);
+  const money2 = reduceTo22(G + money);
+
   const karmic = reduceTo22(D + I);
 
   const chakras: ChakraData[] = [
-    { name: "Sahasrara", physics: B, energy: F, emotion: reduceTo22(B + F) },
-    { name: "Ajna", physics: reduceTo22(A + B), energy: reduceTo22(E + B), emotion: reduceTo22(reduceTo22(A + B) + reduceTo22(E + B)) },
-    { name: "Vishuddha", physics: A, energy: E, emotion: reduceTo22(A + E) },
-    { name: "Anahata", physics: reduceTo22(A + D), energy: reduceTo22(E + D), emotion: reduceTo22(reduceTo22(A + D) + reduceTo22(E + D)) },
-    { name: "Manipura", physics: E, energy: E, emotion: E },
-    { name: "Svadhistana", physics: reduceTo22(C + D), energy: reduceTo22(E + D), emotion: reduceTo22(reduceTo22(C + D) + reduceTo22(E + D)) },
-    { name: "Muladhara", physics: D, energy: C, emotion: reduceTo22(D + C) },
+    { name: "Sahasrara", physics: A, energy: B, emotion: reduceTo22(A + B) },
+    { name: "Ajna", physics: A2, energy: B2, emotion: reduceTo22(A2 + B2) },
+    { name: "Vishuddha", physics: A1, energy: B1, emotion: reduceTo22(A1 + B1) },
+    { name: "Anahata", physics: E, energy: E, emotion: reduceTo22(E + E) },
+    { name: "Manipura", physics: C1, energy: D1, emotion: reduceTo22(C1 + D1) },
+    { name: "Svadhistana", physics: C2, energy: D2, emotion: reduceTo22(C2 + D2) },
+    { name: "Muladhara", physics: C, energy: D, emotion: reduceTo22(C + D) },
   ];
 
   return { 
     A, B, C, D, E, F, G, H, I, 
+    A1, A2, B1, B2, C1, C2, D1, D2,
+    F1, G1, H1, I1,
     sky, earth, personal,
     male, female, social, 
     spiritual, planetary,
     ancestralStrength, internalPower,
-    love, money, karmic, chakras 
+    love, love1, love2, money, money1, money2, karmic, chakras 
   };
 }
 
 export function calculateCompatibility(m1: MatrixData, m2: MatrixData): MatrixData {
   const combine = (p1: number, p2: number) => reduceTo22(p1 + p2);
   
-  const base = {
-    A: combine(m1.A, m2.A),
-    B: combine(m1.B, m2.B),
-    C: combine(m1.C, m2.C),
-    D: combine(m1.D, m2.D),
-    E: combine(m1.E, m2.E),
-    F: combine(m1.F, m2.F),
-    G: combine(m1.G, m2.G),
-    H: combine(m1.H, m2.H),
-    I: combine(m1.I, m2.I),
-    
-    sky: combine(m1.sky, m2.sky),
-    earth: combine(m1.earth, m2.earth),
-    personal: combine(m1.personal, m2.personal),
-    
-    male: combine(m1.male, m2.male),
-    female: combine(m1.female, m2.female),
-    social: combine(m1.social, m2.social),
-    
-    spiritual: combine(m1.spiritual, m2.spiritual),
-    planetary: combine(m1.planetary, m2.planetary),
-    
-    ancestralStrength: combine(m1.ancestralStrength, m2.ancestralStrength),
-    internalPower: combine(m1.internalPower, m2.internalPower),
-
-    love: combine(m1.love, m2.love),
-    money: combine(m1.money, m2.money),
-    karmic: combine(m1.karmic, m2.karmic),
-  };
+  const base: any = {};
+  const keys = Object.keys(m1).filter(k => k !== 'chakras');
+  keys.forEach(key => {
+    base[key] = combine((m1 as any)[key], (m2 as any)[key]);
+  });
 
   const chakras = m1.chakras.map((c, i) => ({
     name: c.name,
@@ -167,7 +188,7 @@ export function calculateCompatibility(m1: MatrixData, m2: MatrixData): MatrixDa
     emotion: combine(c.emotion, m2.chakras[i].emotion),
   }));
 
-  return { ...base, chakras };
+  return { ...base, chakras } as MatrixData;
 }
 
 export const ARCANA_NAMES: Record<number, string> = {

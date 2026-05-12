@@ -371,25 +371,40 @@ function MatrixSvg({ data, label, isCompatibility = false }: { data: MatrixData,
       <Point x={100} y={400} value={data.I} gradient="white-bubble" border="#333" textColor="black" />
 
       {/* Intermediate Sub-points (Chakra/Path Path) */}
-      <Point x={250} y={110} value={reduceTo22(data.B + data.F)} gradient="white-bubble" border="#3498db" textColor="#3498db" small />
-      <Point x={250} y={150} value={10} gradient="white-bubble" border="#34e7f8" textColor="#34e7f8" small />
+      <Point x={250} y={150} value={data.B1} gradient="white-bubble" border="#a855f7" textColor="#a855f7" small />
+      <Point x={250} y={100} value={data.B2} gradient="white-bubble" border="#6366f1" textColor="#6366f1" small />
       
-      <Point x={250} y={390} value={data.love} gradient="white-bubble" border="#e67e22" textColor="#e67e22" small />
-      <Point x={250} y={420} value={19} gradient="white-bubble" border="#333" textColor="#333" small />
+      {/* Love Line */}
+      <Point x={325} y={325} value={data.love} gradient="white-bubble" border="#ef4444" textColor="#ef4444" small />
+      <Point x={287} y={287} value={data.love1} gradient="white-bubble" border="#f43f5e" textColor="#f43f5e" small />
+      <Point x={362} y={362} value={data.love2} gradient="white-bubble" border="#991b1b" textColor="#991b1b" small />
 
-      <Point x={110} y={250} value={reduceTo22(data.A + data.I)} gradient="white-bubble" border="#3498db" textColor="#3498db" small />
-      <Point x={150} y={250} value={15} gradient="white-bubble" border="#34e7f8" textColor="#34e7f8" small />
+      {/* Money Line */}
+      <Point x={325} y={175} value={data.money} gradient="white-bubble" border="#eab308" textColor="#eab308" small />
+      <Point x={287} y={212} value={data.money1} gradient="white-bubble" border="#fbbf24" textColor="#fbbf24" small />
+      <Point x={362} y={137} value={data.money2} gradient="white-bubble" border="#854d0e" textColor="#854d0e" small />
 
-      <Point x={390} y={250} value={data.money} gradient="white-bubble" border="#f39c12" textColor="#f39c12" small />
+      {/* Other cross points */}
+      <Point x={150} y={250} value={data.A1} gradient="white-bubble" border="#0ea5e9" textColor="#0ea5e9" small />
+      <Point x={100} y={250} value={data.A2} gradient="white-bubble" border="#38bdf8" textColor="#38bdf8" small />
+      
+      <Point x={350} y={250} value={data.C1} gradient="white-bubble" border="#fb7185" textColor="#fb7185" small />
+      <Point x={400} y={250} value={data.C2} gradient="white-bubble" border="#f43f5e" textColor="#f43f5e" small />
 
-      {/* Inner Mastery Point */}
-      <Point x={250} y={195} value={15} gradient="white-bubble" border="#27ae60" textColor="#27ae60" small />
+      <Point x={250} y={350} value={data.D1} gradient="white-bubble" border="#ef4444" textColor="#ef4444" small />
+      <Point x={250} y={400} value={data.D2} gradient="white-bubble" border="#b91c1c" textColor="#b91c1c" small />
+
+      {/* Ancestral Intermediate */}
+      <Point x={175} y={175} value={data.F1} gradient="white-bubble" border="#64748b" textColor="#64748b" small />
+      <Point x={325} y={175} value={data.G1} gradient="white-bubble" border="#64748b" textColor="#64748b" small />
+      <Point x={325} y={325} value={data.H1} gradient="white-bubble" border="#64748b" textColor="#64748b" small />
+      <Point x={175} y={325} value={data.I1} gradient="white-bubble" border="#64748b" textColor="#64748b" small />
 
       {/* Symbols */}
-      <g transform="translate(325, 275) scale(1.1)" className="drop-shadow-lg">
+      <g transform="translate(340, 200) scale(1.0)" className="drop-shadow-lg opacity-40">
         <DollarSign className="stroke-green-500 stroke-[3px]" />
       </g>
-      <g transform="translate(275, 305) scale(1.2)" className="drop-shadow-lg">
+      <g transform="translate(315, 305) scale(1.1)" className="drop-shadow-lg opacity-40">
         <Heart className="fill-red-500 stroke-red-600 stroke-[1px]" />
       </g>
 

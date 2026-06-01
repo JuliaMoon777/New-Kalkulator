@@ -1,20 +1,167 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Zap, Calendar, Activity, ScrollText, 
   Heart, Wallet, Star, Shield, 
   ChevronRight, RefreshCw, User, Users,
   Heart as HeartIcon, DollarSign, Sparkles, Brain, 
-  Gem, Map
+  Gem, Map, Gift, Compass, Share2, Check, FileText, Download
 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import { calculateMatrix, calculateCompatibility, calculateAge, type MatrixData, ARCANA_GUIDE, ARCANA_NAMES } from './utils/matrixUtils';
 
+function encodeBase64(str: string): string {
+  try {
+    return btoa(unescape(encodeURIComponent(str)));
+  } catch (e) {
+    return btoa(str);
+  }
+}
+
+function decodeBase64(str: string): string {
+  try {
+    return decodeURIComponent(escape(atob(str)));
+  } catch (e) {
+    try {
+      return atob(str);
+    } catch (err) {
+      return '';
+    }
+  }
+}
+
 export default function App() {
-  const [person1, setPerson1] = useState({ dob: '01.01.1990', name: '' });
+  const [person1, setPerson1] = useState({ dob: '19.01.1994', name: '' });
   const [person2, setPerson2] = useState({ dob: '15.05.1995', name: '' });
   const [mode, setMode] = useState<'single' | 'compatibility'>('single');
   const [view, setView] = useState<'p1' | 'p2' | 'common'>('p1');
   const [result, setResult] = useState<{ m1?: MatrixData; m2?: MatrixData; common?: MatrixData }>({});
+  const [copied, setCopied] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const downloadPdf = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [800, 1130] // Standard exact proportions matching A4 ratio (1:1.41)
+      });
+
+      const page1 = document.getElementById('hidden-pdf-page-1');
+      const page2 = document.getElementById('hidden-pdf-page-2');
+
+      if (page1 && page2) {
+        // Render first page with high scalability for prints
+        const canvas1 = await html2canvas(page1, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff'
+        });
+        const imgData1 = canvas1.toDataURL('image/jpeg', 0.95);
+        doc.addImage(imgData1, 'JPEG', 0, 0, 800, 1130);
+
+        // Render second page
+        doc.addPage([800, 1130]);
+        const canvas2 = await html2canvas(page2, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff'
+        });
+        const imgData2 = canvas2.toDataURL('image/jpeg', 0.95);
+        doc.addImage(imgData2, 'JPEG', 0, 0, 800, 1130);
+
+        // Save PDF with context-based filename
+        const namePart = (mode === 'single' ? (person1.name || 'Uzera') : `${person1.name || 'P1'}_i_${person2.name || 'P2'}`).trim().replace(/[^a-zA-Z0-9_\u00C0-\u017F]+/g, '_');
+        const dobPart = mode === 'single' ? person1.dob : `${person1.dob}_${person2.dob}`;
+        doc.save(`Matryca_Losu_${namePart}_${dobPart}.pdf`);
+      } else {
+        console.error('PDF generation error: Page elements not found in DOM.');
+      }
+    } catch (err) {
+      console.error('Error during pdf export:', err);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const p1Dob = params.get('p1');
+      const p2Dob = params.get('p2');
+      const n1Name = params.get('n1');
+      const n2Name = params.get('n2');
+      const urlMode = params.get('m');
+
+      if (p1Dob) {
+        const decodedDob = decodeBase64(p1Dob);
+        if (decodedDob && decodedDob.length === 10) {
+          setPerson1(prev => ({ ...prev, dob: decodedDob }));
+        }
+      }
+      if (n1Name) {
+        const decodedName = decodeBase64(n1Name);
+        if (decodedName) {
+          setPerson1(prev => ({ ...prev, name: decodedName }));
+        }
+      }
+      if (p2Dob) {
+        const decodedDob = decodeBase64(p2Dob);
+        if (decodedDob && decodedDob.length === 10) {
+          setPerson2(prev => ({ ...prev, dob: decodedDob }));
+        }
+      }
+      if (n2Name) {
+        const decodedName = decodeBase64(n2Name);
+        if (decodedName) {
+          setPerson2(prev => ({ ...prev, name: decodedName }));
+        }
+      }
+      if (urlMode === 'compatibility' || urlMode === 'single') {
+        setMode(urlMode as 'single' | 'compatibility');
+        if (urlMode === 'compatibility') {
+          setView('common');
+        }
+      }
+    } catch (err) {
+      console.error('Error parsing loaded URL parameters:', err);
+    }
+  }, []);
+
+  const handleShare = () => {
+    try {
+      const params = new URLSearchParams();
+      if (person1.dob) {
+        params.set('p1', encodeBase64(person1.dob));
+      }
+      if (person1.name) {
+        params.set('n1', encodeBase64(person1.name));
+      }
+      if (mode === 'compatibility') {
+        params.set('m', 'compatibility');
+        if (person2.dob) {
+          params.set('p2', encodeBase64(person2.dob));
+        }
+        if (person2.name) {
+          params.set('n2', encodeBase64(person2.name));
+        }
+      } else {
+        params.set('m', 'single');
+      }
+
+      const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    } catch (err) {
+      console.error('Error generating share link:', err);
+    }
+  };
 
   const age1 = calculateAge(person1.dob);
   const age2 = calculateAge(person2.dob);
@@ -52,487 +199,1131 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-purple-100 selection:text-purple-900 pb-20">
-      {/* Background Orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-purple-100/50 rounded-full blur-[120px]" />
-        <div className="absolute top-[20%] -right-[10%] w-[30%] h-[30%] bg-blue-100/40 rounded-full blur-[100px]" />
-        <div className="absolute -bottom-[10%] left-[20%] w-[35%] h-[35%] bg-pink-100/30 rounded-full blur-[110px]" />
+    <div className="min-h-screen bg-[#f1f5f9] text-[#1e293b] font-sans selection:bg-purple-100 selection:text-purple-900 pb-20">
+      {/* Subtle top blur decor */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[35%] h-[35%] bg-purple-200/40 rounded-full blur-[100px]" />
+        <div className="absolute top-[10%] right-[-1%] w-[25%] h-[25%] bg-orange-100/40 rounded-full blur-[90px]" />
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 pt-8 md:pt-16 relative z-10">
+      <div className="max-w-[1300px] mx-auto px-4 pt-10 md:pt-16 relative z-10" id="main-container">
         
-        {/* Header Section */}
-        <div className="flex flex-col items-center mb-16 text-center">
+        {/* Top Header */}
+        <div className="flex flex-col items-center mb-10 text-center" id="header-section">
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center gap-6 mb-12"
+            className="flex flex-col items-center gap-4 mb-8"
           >
-             <p className="text-xs font-bold text-slate-400 tracking-[0.4em] uppercase mb-[-1.5rem]">System Samopoznania</p>
-             <div className="w-32 h-32 flex items-center justify-center transition-transform duration-500 hover:scale-110">
-                <img src="https://i.postimg.cc/wvF033Vy/Logo-no-JM.png" alt="Logo" className="w-full h-full object-contain pointer-events-none drop-shadow-2xl" />
+             <div className="w-16 h-16 flex items-center justify-center transition-transform duration-500 hover:scale-105">
+                <img src="https://i.postimg.cc/wvF033Vy/Logo-no-JM.png" alt="Logo" className="w-full h-full object-contain pointer-events-none" />
              </div>
              <div>
-                <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 uppercase">
-                  Matryca <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600">Losu</span>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-800 uppercase font-sans">
+                  MATRYCA <span className="text-[#a855f7]">LOSU</span>
                 </h1>
+                <p className="text-[10px] font-bold text-slate-400 tracking-[0.34em] uppercase mt-1">SYSTEM SAMOPOZNANIA</p>
              </div>
           </motion.div>
 
-          <div className="relative bg-white/40 backdrop-blur-3xl p-1.5 rounded-[2.5rem] shadow-sm mb-12 flex items-center border border-white/60">
-            <motion.div
-              className="absolute inset-y-1.5 rounded-full bg-white shadow-xl shadow-slate-200/50"
-              initial={false}
-              animate={{
-                left: mode === 'single' ? '6px' : '50%',
-                right: mode === 'single' ? '50%' : '6px',
-              }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            />
+          {/* Individual vs Compatibility Tabs */}
+          <div className="relative bg-white p-1 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-8 flex items-center border border-slate-100/80" id="tab-mode-selector">
             <button 
               onClick={() => { setMode('single'); setView('p1'); }}
-              className={`relative z-10 px-10 py-3.5 rounded-full text-xs font-black tracking-widest transition-colors ${mode === 'single' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`relative z-10 px-8 py-3 rounded-full text-[11px] font-bold tracking-widest transition-all ${mode === 'single' ? 'bg-[#1e293b] text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+              id="btn-individual"
             >
               INDYWIDUALNA
             </button>
             <button 
               onClick={() => setMode('compatibility')}
-              className={`relative z-10 px-10 py-3.5 rounded-full text-xs font-black tracking-widest transition-colors ${mode === 'compatibility' ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`relative z-10 px-8 py-3 rounded-full text-[11px] font-bold tracking-widest transition-all ${mode === 'compatibility' ? 'bg-[#1e293b] text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+              id="btn-compatibility"
             >
               KOMPATYBILNOŚĆ
             </button>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-6 w-full max-w-5xl px-4">
-            <div className="flex-1 min-w-[320px]">
-              <div className="bg-white/70 backdrop-blur-2xl rounded-[2.5rem] p-8 border border-white shadow-2xl shadow-slate-200/50">
-                 <div className="flex items-center gap-4 mb-6">
-                    <div className="w-11 h-11 rounded-2xl bg-purple-100 flex items-center justify-center text-purple-600 shadow-inner">
-                       <User className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Osoba 1</p>
-                      <input 
-                         value={person1.name}
-                         onChange={(e) => setPerson1(p => ({ ...p, name: e.target.value }))}
-                         placeholder="Wpisz imię..."
-                         className="bg-transparent border-none focus:ring-0 font-black text-xl placeholder:text-slate-300 w-full p-0"
-                      />
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-4 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
-                    <Calendar className="w-5 h-5 text-slate-400" />
-                    <div className="flex-1">
-                      <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-0.5">Data urodzenia</p>
-                      <input 
-                         value={person1.dob}
-                         onChange={(e) => handleDateChange(e.target.value, setPerson1)}
-                         placeholder="DD.MM.YYYY"
-                         className="bg-transparent border-none focus:ring-0 font-black text-2xl w-full p-0"
-                      />
-                    </div>
-                 </div>
+          {/* Form Inputs */}
+          <div className="flex flex-wrap justify-center gap-4 w-full max-w-4xl px-2" id="inputs-wrapper">
+            {/* Person 1 Input */}
+            <div className="flex-1 min-w-[280px]">
+              <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)]">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">
+                    {mode === 'compatibility' ? 'OSOBA 1' : 'DANE ANALIZYWANE'}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100/50">
+                        <User className="w-4 h-4 text-slate-400" />
+                        <div className="flex-1">
+                          <p className="text-[8px] font-bold text-slate-400 uppercase">Imię (opcjonalnie)</p>
+                          <input 
+                             value={person1.name}
+                             onChange={(e) => setPerson1(p => ({ ...p, name: e.target.value }))}
+                             placeholder="Wpisz imię..."
+                             className="bg-transparent border-none focus:ring-0 font-bold text-sm text-slate-700 w-full p-0 leading-tight focus:outline-none"
+                             id="input-name-1"
+                          />
+                        </div>
+                     </div>
+                     <div className="flex items-center gap-3 bg-[#faf5ff] p-3 rounded-2xl border border-[#f3e8ff]">
+                        <Calendar className="w-4 h-4 text-[#a855f7]" />
+                        <div className="flex-1">
+                          <p className="text-[8px] font-bold text-[#a855f7] uppercase">Data urodzenia</p>
+                          <input 
+                             value={person1.dob}
+                             onChange={(e) => handleDateChange(e.target.value, setPerson1)}
+                             placeholder="19.01.1994"
+                             className="bg-transparent border-none focus:ring-0 font-black text-base text-slate-800 w-full p-0 leading-tight focus:outline-none"
+                             id="input-dob-1"
+                          />
+                        </div>
+                     </div>
+                  </div>
               </div>
             </div>
 
+            {/* Person 2 Input in Compatibility Mode */}
             {mode === 'compatibility' && (
               <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex-1 min-w-[320px]"
+                className="flex-1 min-w-[280px]"
+                id="person2-wrapper"
               >
-                <div className="bg-white/70 backdrop-blur-2xl rounded-[2.5rem] p-8 border border-white shadow-2xl shadow-slate-200/50 relative overflow-hidden group">
-                   <div className="absolute top-0 right-0 w-32 h-32 bg-pink-100/30 rounded-full blur-3xl -mr-16 -mt-16" />
-                   <div className="flex items-center gap-4 mb-6 relative z-10">
-                      <div className="w-11 h-11 rounded-2xl bg-pink-100 flex items-center justify-center text-pink-500 shadow-inner">
-                         <Users className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Osoba 2</p>
-                        <input 
-                           value={person2.name}
-                           onChange={(e) => setPerson2(p => ({ ...p, name: e.target.value }))}
-                           placeholder="Wpisz imię..."
-                           className="bg-transparent border-none focus:ring-0 font-black text-xl placeholder:text-slate-300 w-full p-0"
-                        />
-                      </div>
-                   </div>
-                   <div className="flex items-center gap-4 bg-slate-50/50 p-5 rounded-2xl border border-slate-100 relative z-10">
-                      <Calendar className="w-5 h-5 text-slate-400" />
-                      <div className="flex-1">
-                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-0.5">Data urodzenia</p>
-                        <input 
-                           value={person2.dob}
-                           onChange={(e) => handleDateChange(e.target.value, setPerson2)}
-                           placeholder="DD.MM.YYYY"
-                           className="bg-transparent border-none focus:ring-0 font-black text-2xl w-full p-0"
-                        />
-                      </div>
-                   </div>
+                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)]">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">OSOBA 2</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                       <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100/50">
+                          <User className="w-4 h-4 text-slate-400" />
+                          <div className="flex-1">
+                            <p className="text-[8px] font-bold text-slate-400 uppercase">Imię (opcjonalnie)</p>
+                            <input 
+                               value={person2.name}
+                               onChange={(e) => setPerson2(p => ({ ...p, name: e.target.value }))}
+                               placeholder="Wpisz imię..."
+                               className="bg-transparent border-none focus:ring-0 font-bold text-sm text-slate-700 w-full p-0 leading-tight focus:outline-none"
+                               id="input-name-2"
+                            />
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-3 bg-[#fff7ed] p-3 rounded-2xl border border-[#ffedd5]">
+                          <Calendar className="w-4 h-4 text-[#f97316]" />
+                          <div className="flex-1">
+                            <p className="text-[8px] font-bold text-[#f97316] uppercase">Data urodzenia</p>
+                            <input 
+                               value={person2.dob}
+                               onChange={(e) => handleDateChange(e.target.value, setPerson2)}
+                               placeholder="DD.MM.YYYY"
+                               className="bg-transparent border-none focus:ring-0 font-black text-base text-slate-800 w-full p-0 leading-tight focus:outline-none"
+                               id="input-dob-2"
+                            />
+                          </div>
+                       </div>
+                    </div>
                 </div>
               </motion.div>
             )}
           </div>
+
+          {/* Share & Download Buttons Block */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 flex flex-wrap justify-center gap-4"
+            id="share-button-container"
+          >
+            <button
+              onClick={handleShare}
+              className={`flex items-center gap-2.5 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-sm border ${
+                copied 
+                  ? 'bg-emerald-500 text-white border-emerald-500 shadow-emerald-100' 
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/80 hover:border-slate-300'
+              }`}
+              id="btn-share-matrix"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4 text-white animate-pulse" />
+                  <span className="text-white">Skopiowano link!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-4 h-4 text-[#a855f7]" />
+                  <span>Udostępnij matrycę</span>
+                </>
+              )}
+            </button>
+
+            {activeMatrix && (
+              <button
+                onClick={downloadPdf}
+                disabled={isGeneratingPdf}
+                className={`flex items-center gap-2.5 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-sm border ${
+                  isGeneratingPdf
+                    ? 'bg-slate-150 text-slate-400 border-slate-200 cursor-not-allowed'
+                    : 'bg-[#a855f7] hover:bg-[#9333ea] text-white border-[#a855f7] hover:border-[#9333ea]'
+                }`}
+                id="btn-download-pdf"
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 text-slate-400 animate-spin" />
+                    <span>Generowanie...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 text-white" />
+                    <span>Pobierz jako PDF</span>
+                  </>
+                )}
+              </button>
+            )}
+          </motion.div>
         </div>
 
-        {/* Content Tabs for Compatibility Mode */}
+        {/* Content Tabs for Compatibility View Options */}
         {mode === 'compatibility' && (
-          <div className="flex justify-center mb-10 gap-4">
-            {['p1', 'common', 'p2'].map((v) => (
+          <div className="flex justify-center mb-8 gap-2 px-4" id="compatibility-subtabs">
+            {[
+              { id: 'p1', label: person1.name || 'Osoba 1' },
+              { id: 'common', label: 'KOMPATYBILNOŚĆ (Pary)' },
+              { id: 'p2', label: person2.name || 'Osoba 2' }
+            ].map((tab) => (
               <button
-                key={v}
-                onClick={() => setView(v as any)}
-                className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
-                  view === v ? 'bg-slate-900 text-white shadow-lg' : 'bg-white/60 text-slate-400 hover:bg-white'
+                key={tab.id}
+                onClick={() => setView(tab.id as any)}
+                className={`px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                  view === tab.id 
+                    ? 'bg-[#1e293b] text-white border-[#1e293b] shadow-md' 
+                    : 'bg-white text-slate-400 border-slate-200/60 hover:bg-slate-50'
                 }`}
+                id={`subtab-${tab.id}`}
               >
-                {v === 'p1' ? (person1.name || 'Osoba 1') : v === 'p2' ? (person2.name || 'Osoba 2') : 'DOPASOWANIE'}
+                {tab.label}
               </button>
             ))}
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-12 items-start">
-          <div className="flex-1 w-full order-2 lg:order-1">
+        {/* Main Content: Columns Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-12" id="main-content-grid">
+          
+          {/* LEFT: Matrix Graphical Circle Canvas */}
+          <div className="lg:col-span-7 flex flex-col items-center" id="diagram-column">
             <AnimatePresence mode="wait">
-              {activeMatrix && (
+              {activeMatrix ? (
                 <motion.div 
                   key={mode + (person1.dob) + (person2.dob) + view}
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.97 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="w-full flex flex-col items-center"
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="w-full flex justify-center"
                 >
-                  <div className="w-full max-w-[950px] aspect-square relative mb-8 md:mb-12 bg-white/20 backdrop-blur-lg rounded-full p-4 sm:p-8 shadow-2xl border border-white/30 flex items-center justify-center">
-                    <MatrixSvg 
-                      data={activeMatrix} 
-                    />
+                  {/* Styled Outer Diamond Circle with gorgeous white background and soft card styling */}
+                  <div className="w-full max-w-[500px] aspect-square relative bg-white rounded-full p-6 shadow-[0_24px_70px_rgba(0,0,0,0.06)] border border-slate-100/50 flex items-center justify-center" id="white-circle-canvas">
+                    <MatrixSvg data={activeMatrix} />
                   </div>
-
-                  {/* Results Bottom Detail */}
-                  <div className="w-full flex flex-col md:flex-row justify-center items-center gap-8 px-4 sm:px-10 py-6 sm:py-8 bg-white rounded-[1.5rem] sm:rounded-[2rem] border border-slate-100 shadow-sm mb-10">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
-                        <Activity className="w-5 h-5 text-slate-900" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] text-center sm:text-left mb-0.5">Wiek</p>
-                        <p className="text-2xl sm:text-3xl font-black text-slate-900 text-center sm:text-left">
-                          {mode === 'single' ? (age1 || '-') : (view === 'p1' ? (age1 || '-') : view === 'p2' ? (age2 || '-') : `${age1} | ${age2}`)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 mb-12">
-                       <DestinyCard 
-                          label="1 pr-e (20-40 lat)"
-                          subLabel="Znalezienie siebie"
-                          val1={activeMatrix.sky}
-                          val2={activeMatrix.earth}
-                          sum={activeMatrix.personal}
-                          labels={['NIEBO', 'ZIEMIA']}
-                        />
-                        <DestinyCard 
-                          label="2 pr-e (40-60 lat)"
-                          subLabel="Socjalizacja"
-                          val1={activeMatrix.male}
-                          val2={activeMatrix.female}
-                          sum={activeMatrix.social}
-                          labels={['MĘSKA', 'ŻEŃSKA']}
-                        />
-                    </div>
-
-                    <div className="md:col-span-2 flex flex-col sm:flex-row gap-6 mb-12 w-full">
-                       <DestinyMini 
-                          label="3 pr-e (od 60 lat)"
-                          subLabel="Przeznaczenie Duchowe"
-                          val={activeMatrix.spiritual}
-                        />
-                        <DestinyMini 
-                          label="4 pr-e"
-                          subLabel="Korzyść"
-                          val={activeMatrix.planetary}
-                          dark
-                        />
-                    </div>
-
-                    {/* INTERACTIVE TIPS / INSIGHTS */}
-                    <div className="md:col-span-2 mt-8 md:mt-12 mb-12 md:mb-20 bg-purple-50/50 rounded-[2.5rem] md:rounded-[4rem] p-6 sm:p-8 md:p-12 border border-purple-100/50 shadow-inner">
-                       <h3 className="text-lg md:text-xl font-black text-purple-900 mb-8 md:mb-10 flex items-center gap-4">
-                          <ScrollText className="w-6 h-6" /> {mode === 'compatibility' && view === 'common' ? "Wspólne Wglądy (Związek)" : "Kluczowe Wglądy (Głębokie Porady)"}
-                       </h3>
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          <InsightRow 
-                            label={mode === 'compatibility' && view === 'common' ? "Charakter Związku" : "Twój Charakter (Centrum)"} 
-                            val={activeMatrix.E} 
-                            isCompatibility={mode === 'compatibility' && view === 'common'}
-                          />
-                          <InsightRow 
-                            label={mode === 'compatibility' && view === 'common' ? "Wspólna Duchowość" : "Twoja Wyższa Jaźń (Duch)"} 
-                            val={activeMatrix.B} 
-                            isCompatibility={mode === 'compatibility' && view === 'common'}
-                          />
-                          <InsightRow 
-                            label={mode === 'compatibility' && view === 'common' ? "Wspólna Karma Związku" : "Zadanie Karmiczne"} 
-                            val={activeMatrix.D} 
-                            isCompatibility={mode === 'compatibility' && view === 'common'}
-                          />
-                          <InsightRow 
-                            label={mode === 'compatibility' && view === 'common' ? "Wspólne Finanse" : "Moc Finansowa"} 
-                            val={activeMatrix.money} 
-                            isCompatibility={mode === 'compatibility' && view === 'common'}
-                          />
-                          <InsightRow 
-                            label={mode === 'compatibility' && view === 'common' ? "Atmosfera w Relacji" : "Otwarcie Serca"} 
-                            val={activeMatrix.love} 
-                            isCompatibility={mode === 'compatibility' && view === 'common'}
-                          />
-                          <InsightRow 
-                            label={mode === 'compatibility' && view === 'common' ? "Wspólny Potencjał Rodowy" : "Talent Rodowy"} 
-                            val={activeMatrix.F} 
-                            isCompatibility={mode === 'compatibility' && view === 'common'}
-                          />
-                       </div>
-                       <p className="mt-12 text-center text-[10px] uppercase font-black tracking-[0.2em] text-purple-300">Krótkie wskazówki systemu Matrycy Przeznaczenia — traktuj je jako drogowskaz.</p>
-                    </div>
                 </motion.div>
+              ) : (
+                <div className="w-full max-w-[500px] aspect-square bg-white rounded-full flex items-center justify-center border border-slate-100 text-slate-450 italic text-sm">
+                  Wprowadź prawidłową datę urodzenia...
+                </div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* RIGHT COLUMN: Karta Zdrowia & Analysis */}
-          {activeMatrix && view !== 'common' && (
-            <div className="w-full lg:w-[480px] lg:sticky lg:top-10 lg:order-2">
-               <div className="text-center mb-6 md:mb-8">
-                 <h2 className="text-3xl font-black text-black uppercase tracking-widest">Karta Zdrowia</h2>
-                 {mode === 'compatibility' && <p className="text-xs font-bold text-purple-400 mt-2">WSPÓLNA ENERGIA PARY</p>}
-               </div>
-               
-               <motion.div
+          {/* RIGHT: Modernized beautiful Health Card Table */}
+          <div className="lg:col-span-5 w-full lg:sticky lg:top-10" id="health-card-column">
+            <AnimatePresence mode="wait">
+              {activeMatrix && view !== 'common' ? (
+                <motion.div
+                  key={mode + (person1.dob) + (person2.dob) + view}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="bg-white/60 backdrop-blur-2xl rounded-[3rem] p-8 border border-white/80 shadow-xl"
-               >
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.4 }}
+                  className="bg-white rounded-[2rem] p-8 border border-white shadow-[0_15px_50px_rgba(0,0,0,0.03)]"
+                  id="health-card-container"
+                >
+                  <div className="text-center mb-8">
+                     <h2 className="text-lg font-black text-slate-800 uppercase tracking-[0.24em] font-sans">KARTA ZDROWIA</h2>
+                     {mode === 'compatibility' && (
+                        <span className="text-[9px] font-black tracking-widest text-[#a855f7] uppercase block mt-1">Połączona energia zdrowia</span>
+                     )}
+                  </div>
+                  
                   <HealthTable chakras={activeMatrix.chakras} />
-               </motion.div>
-            </div>
-          )}
+                </motion.div>
+              ) : activeMatrix && view === 'common' ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-gradient-to-br from-[#1e293b] to-[#111827] text-white rounded-[2rem] p-8 shadow-xl"
+                  id="compatibility-info-card"
+                >
+                  <h2 className="text-sm font-black text-[#fbcfe8] uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Compass className="w-4 h-4 text-[#ec4899]" /> ANALIZA ZWIĄZKU
+                  </h2>
+                  <p className="text-xs text-slate-300 leading-relaxed mb-6">
+                    Ten widok prezentuje połączone energie obojga partnerów wyliczone według tradycyjnego systemu Matrycy Przeznaczenia. 
+                    Sumaryczny punkt komfortu, karmy rodowej oraz linie męskie/żeńskie obrazują synergię Waszej relacji.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Wspólna Karma Rodowa</p>
+                        <p className="text-xs text-slate-200 mt-0.5">Łączna siła i lekcje obojga</p>
+                      </div>
+                      <span className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 font-extrabold flex items-center justify-center border border-purple-500/30 font-mono text-sm">
+                        {activeMatrix.ancestralStrength}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Wewnętrzna Energia Pary</p>
+                        <p className="text-xs text-slate-200 mt-0.5">Wzajemne przeznaczenie podświadome</p>
+                      </div>
+                      <span className="w-10 h-10 rounded-xl bg-pink-500/20 text-pink-300 font-extrabold flex items-center justify-center border border-pink-500/30 font-mono text-sm font-mono">
+                        {activeMatrix.E}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
         </div>
+
+        {/* BOTTOM SECTION: WIEK, FATE CARDS, ANCESTRAL POWER & STRENGTH */}
+        <AnimatePresence mode="wait">
+          {activeMatrix && (
+            <motion.div
+              key={`bottom-${mode}-${view}`}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6 md:space-y-8"
+              id="bottom-section-wrapper"
+            >
+              {/* Divider and Title */}
+              <div className="relative flex items-center justify-center py-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200" />
+                </div>
+                <div className="relative bg-[#f1f5f9] px-6 text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase">
+                  WIEK & DETALE ETAPÓW
+                </div>
+              </div>
+
+              {/* WIEK Container */}
+              <div className="flex justify-center" id="widget-wiek-container">
+                <div className="bg-white rounded-2xl px-8 py-4 border border-slate-100 shadow-[0_10px_35px_rgba(0,0,0,0.02)] flex items-center gap-5">
+                   <div className="flex flex-col text-left">
+                     <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase">WIEK</span>
+                   </div>
+                   <span className="text-3xl font-black text-[#1e293b]" id="text-wiek-value">
+                     {mode === 'single' ? (age1 || '-') : (view === 'p1' ? (age1 || '-') : view === 'p2' ? (age2 || '-') : `${age1} i ${age2}`)}
+                   </span>
+                </div>
+              </div>
+
+              {/* The Four Cards (Znalezienie siebie, Socjalizacja, Przeznaczenie duchowe, Korzyść) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="fate-cards-grid">
+                
+                {/* Card 1: Znalezienie siebie */}
+                <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] flex flex-col justify-between" id="card-stage-1">
+                   <div>
+                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">1 pr-e</p>
+                     <p className="text-sm font-black text-slate-800 uppercase mt-0.5">ZNALEZIENIE SIEBIE</p>
+                     
+                     <div className="mt-4 flex gap-4 text-[11px] text-slate-450 border-t border-slate-50 pt-3">
+                        <div>
+                          <span className="font-bold text-slate-400">Niebo:</span> <span className="font-black text-slate-750">{activeMatrix.sky}</span>
+                        </div>
+                        <div>
+                          <span className="font-bold text-slate-400">Ziemia:</span> <span className="font-black text-slate-750">{activeMatrix.earth}</span>
+                        </div>
+                     </div>
+                   </div>
+                   
+                   <div className="flex justify-end mt-6">
+                      <div className="w-12 h-12 rounded-full bg-[#faf5ff] text-[#a855f7] border-2 border-[#f3e8ff] flex items-center justify-center font-extrabold text-base shadow-sm font-mono">
+                        {activeMatrix.personal}
+                      </div>
+                   </div>
+                </div>
+
+                {/* Card 2: Socjalizacja */}
+                <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] flex flex-col justify-between" id="card-stage-2">
+                   <div>
+                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">2 pr-e</p>
+                     <p className="text-sm font-black text-slate-800 uppercase mt-0.5">SOCJALIZACJA</p>
+                     
+                     <div className="mt-4 flex gap-4 text-[11px] text-slate-450 border-t border-slate-50 pt-3">
+                        <div>
+                          <span className="font-bold text-slate-400">Męska:</span> <span className="font-black text-slate-750">{activeMatrix.male}</span>
+                        </div>
+                        <div>
+                          <span className="font-bold text-slate-400">Żeńska:</span> <span className="font-black text-slate-750">{activeMatrix.female}</span>
+                        </div>
+                     </div>
+                   </div>
+                   
+                   <div className="flex justify-end mt-6">
+                      <div className="w-12 h-12 rounded-full bg-[#faf5ff] text-[#a855f7] border-2 border-[#f3e8ff] flex items-center justify-center font-extrabold text-base shadow-sm font-mono">
+                        {activeMatrix.social}
+                      </div>
+                   </div>
+                </div>
+
+                {/* Card 3: Przeznaczenie duchowe */}
+                <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] flex flex-col justify-between" id="card-stage-3">
+                   <div>
+                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">3 pr-e</p>
+                     <p className="text-sm font-black text-slate-800 uppercase mt-0.5 leading-tight">PRZEZNACZENIE DUCHOWE</p>
+                     <p className="text-[10px] text-slate-400 mt-2 italic">Podsumowująca wibracja sfery ducha</p>
+                   </div>
+                   
+                   <div className="flex justify-end mt-6">
+                      <div className="w-12 h-12 rounded-full bg-[#1e293b] text-white flex items-center justify-center font-extrabold text-base shadow-md font-mono">
+                        {activeMatrix.spiritual}
+                      </div>
+                   </div>
+                </div>
+
+                {/* Card 4: Korzyść (black styled block exactly as requested) */}
+                <div className="bg-[#1e293b] text-white rounded-[2rem] p-6 shadow-lg flex flex-col justify-between relative overflow-hidden" id="card-stage-korzysc">
+                   {/* Background circular highlight to pop visually */}
+                   <div className="absolute top-[-20%] right-[-10%] w-20 h-20 bg-purple-500/10 rounded-full blur-xl" />
+                   
+                   <div>
+                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">4 pr-e</p>
+                     <p className="text-sm font-black text-[#faf5ff] uppercase mt-0.5 leading-tight">KORZYŚĆ</p>
+                     <p className="text-[10px] text-slate-300 mt-2 italic">Ostateczny dar przeznaczenia</p>
+                   </div>
+                   
+                   <div className="flex justify-end mt-6 relative z-10">
+                      <div className="w-12 h-12 rounded-full bg-white text-[#1e293b] flex items-center justify-center font-extrabold text-base shadow-md font-mono">
+                        {activeMatrix.planetary}
+                      </div>
+                   </div>
+                </div>
+              </div>
+
+              {/* Minimalist Cards for Ancestral strength and Power code display */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id="additional-blocks-row">
+                 
+                 {/* Siła przodkówCard */}
+                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_8px_25px_rgba(0,0,0,0.015)] flex items-center justify-between" id="card-additional-ancestral">
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
+                          <Compass className="w-5 h-5" />
+                       </div>
+                       <div className="text-left">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">SIŁA PRZODKÓW</p>
+                          <p className="text-xs text-slate-400 mt-0.5">Potencjał rodów męskich i żeńskich</p>
+                       </div>
+                    </div>
+                    <span className="text-2xl font-black text-[#1e293b] font-mono px-4 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+                      {activeMatrix.ancestralStrength}
+                    </span>
+                 </div>
+
+                 {/* Wewnętrzny kod siły Card */}
+                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_8px_25px_rgba(0,0,0,0.015)] flex items-center justify-between" id="card-additional-powercode">
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-[#a855f7] shrink-0">
+                          <Zap className="w-5 h-5" />
+                       </div>
+                       <div className="text-left">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">WEWNĘTRZNY KOD SIŁY</p>
+                          <p className="text-xs text-slate-400 mt-0.5">Twoje unikalne spektrum mocy</p>
+                       </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-1.5 font-mono">
+                       <span className="text-sm font-black text-[#a855f7] bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100">
+                         {activeMatrix.E}
+                       </span>
+                       <span className="text-[10px] font-bold text-slate-350">•</span>
+                       <span className="text-sm font-black text-slate-800 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                         {activeMatrix.internalPower}
+                       </span>
+                       <span className="text-[10px] font-bold text-slate-350">•</span>
+                       <span className="text-sm font-black text-amber-750 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100">
+                         {activeMatrix.E + activeMatrix.internalPower > 22 
+                           ? String(activeMatrix.E + activeMatrix.internalPower).split('').reduce((a,b)=>a+Number(b),0) > 22
+                             ? (String(activeMatrix.E + activeMatrix.internalPower).split('').reduce((a,b)=>a+Number(b),0) - 22)
+                             : String(activeMatrix.E + activeMatrix.internalPower).split('').reduce((a,b)=>a+Number(b),0)
+                           : activeMatrix.E + activeMatrix.internalPower}
+                       </span>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Interpretation Blocks (Darmic/Life Guides) */}
+              {view !== 'common' && (
+                <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-[0_12px_40px_rgba(0,0,0,0.02)] mt-10" id="insights-section">
+                   <h3 className="text-sm font-black text-slate-800 tracking-wider mb-6 flex items-center gap-2">
+                     <ScrollText className="w-4 h-4 text-[#a855f7]" /> INTERPRETACJA KLUCZOWYCH ENERGII
+                   </h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <InsightItem label="Twój Charakter (Centrum)" val={activeMatrix.E} />
+                      <InsightItem label="Twoja Wyższa Jaźń (Duch)" val={activeMatrix.B} />
+                      <InsightItem label="Przeznaczenie Karmiczne" val={activeMatrix.D} />
+                   </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Hidden high-fidelity elements used for generating multi-page PDF */}
+        {activeMatrix && (
+          <div style={{ position: 'absolute', left: '-9999px', top: '0', width: '1px', height: '1px', overflow: 'hidden', pointerEvents: 'none' }}>
+             {/* PAGE 1 */}
+             <div id="hidden-pdf-page-1" className="w-[800px] h-[1130px] p-12 bg-white flex flex-col justify-between relative text-slate-800" style={{ fontFamily: 'Inter, sans-serif' }}>
+                <div>
+                   {/* Header */}
+                   <div className="flex items-center justify-between border-b pb-6 mb-8 border-slate-150">
+                      <div className="flex items-center gap-3">
+                         <img src="https://i.postimg.cc/wvF033Vy/Logo-no-JM.png" alt="Logo" className="w-14 h-14 object-contain" referrerPolicy="no-referrer" />
+                         <div className="text-left">
+                            <h1 className="text-xl font-black text-slate-800 tracking-tight uppercase leading-none">MATRYCA LOSU</h1>
+                            <p className="text-[8px] font-bold text-slate-400 tracking-[0.25em] uppercase mt-1">JMOON-NUMEROLOGY.COM</p>
+                         </div>
+                      </div>
+                      <div className="text-right">
+                         <span className="text-[9px] font-black tracking-widest text-[#a855f7] bg-purple-50 px-3 py-1 rounded-full uppercase">
+                            {mode === 'single' ? 'ANALIZA INDYWIDUALNA' : 'ANALIZA KOMPATYBILNOŚCI'}
+                         </span>
+                      </div>
+                   </div>
+
+                   {/* User Info */}
+                   <div className="grid grid-cols-2 gap-4 mb-4 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                      <div className="text-left">
+                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Osoba / Partner 1</p>
+                         <p className="text-base font-extrabold text-slate-800 mt-1">{person1.name || 'Użytkownik'}</p>
+                         <p className="text-xs text-slate-500 mt-0.5">Data urodzenia: <span className="font-bold">{person1.dob}</span> ({age1} lat)</p>
+                      </div>
+                      {mode === 'compatibility' && (
+                         <div className="text-left">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Partner 2</p>
+                            <p className="text-base font-extrabold text-slate-800 mt-1">{person2.name || 'Partner'}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Data urodzenia: <span className="font-bold">{person2.dob}</span> ({age2} lat)</p>
+                         </div>
+                      )}
+                   </div>
+
+                   {/* Main layout row on Page 1 */}
+                   <div className="grid grid-cols-12 gap-8 items-center mt-6">
+                      {/* Matrix Diagram */}
+                      <div className="col-span-7 flex flex-col items-center">
+                         <div className="w-[380px] h-[380px] bg-white rounded-full p-2 border border-slate-100 flex items-center justify-center shadow-sm">
+                            <MatrixSvg data={activeMatrix} />
+                         </div>
+                         <p className="text-[9px] text-slate-400 font-bold tracking-widest uppercase mt-4 text-center">WZÓR MATRYCY PRZEZNACZENIA</p>
+                      </div>
+
+                      {/* Right side - Health table or compatibility overview */}
+                      <div className="col-span-5 bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                         {view !== 'common' ? (
+                            <>
+                               <div className="text-center mb-5 pb-2 border-b border-slate-100">
+                                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">KARTA ZDROWIA</h3>
+                               </div>
+                               <HealthTable chakras={activeMatrix.chakras} />
+                            </>
+                         ) : (
+                            <div className="text-left">
+                               <div className="text-center mb-5 pb-2 border-b border-slate-100">
+                                  <h3 className="text-xs font-black text-purple-800 uppercase tracking-widest">ANALIZA ZWIĄZKU</h3>
+                               </div>
+                               <p className="text-xs text-slate-600 leading-relaxed mb-6">
+                                  Ten widok przedstawia wzajemne połączenie energii partnerów na podstawie systemowej analizy Matrycy Przeznaczenia.
+                                </p>
+                               <div className="space-y-4">
+                                  <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 flex justify-between items-center">
+                                     <div className="text-left">
+                                        <p className="text-[9px] font-bold text-slate-405 uppercase">Wspólna Karma Rodu</p>
+                                        <p className="text-xs font-bold text-slate-700 mt-0.5">Łączna siła i lekcje obojga</p>
+                                     </div>
+                                     <span className="w-8 h-8 rounded-lg bg-[#a855f7] text-white font-black text-sm flex items-center justify-center font-mono">
+                                        {activeMatrix.ancestralStrength}
+                                     </span>
+                                  </div>
+                                  <div className="p-3 bg-pink-50 rounded-xl border border-pink-100 flex justify-between items-center">
+                                     <div className="text-left">
+                                        <p className="text-[9px] font-bold text-slate-405 uppercase">Wewnętrzna Energia Pary</p>
+                                        <p className="text-xs font-bold text-slate-700 mt-0.5">Wzajemne przeznaczenie</p>
+                                     </div>
+                                     <span className="w-8 h-8 rounded-lg bg-[#ec4899] text-white font-black text-sm flex items-center justify-center font-mono">
+                                        {activeMatrix.E}
+                                     </span>
+                                  </div>
+                               </div>
+                            </div>
+                         )}
+                      </div>
+                   </div>
+                </div>
+
+                {/* Footer details */}
+                <div className="flex justify-between items-center border-t pt-5 border-slate-100 text-[10px] text-slate-400">
+                   <span className="text-left">Raport wygenerowany dla: <b>{person1.name || 'Użytkownik'}</b> ({person1.dob})</span>
+                   <span className="font-mono">Strona 1 z 2 • Jmoon-numerology.com</span>
+                </div>
+             </div>
+
+
+             {/* PAGE 2 */}
+             <div id="hidden-pdf-page-2" className="w-[800px] h-[1130px] p-12 bg-white flex flex-col justify-between relative text-slate-800" style={{ fontFamily: 'Inter, sans-serif' }}>
+                <div>
+                   {/* Header page 2 */}
+                   <div className="flex items-center justify-between border-b pb-6 mb-8 border-slate-150">
+                      <div className="flex items-center gap-3">
+                         <img src="https://i.postimg.cc/wvF033Vy/Logo-no-JM.png" alt="Logo" className="w-14 h-14 object-contain" referrerPolicy="no-referrer" />
+                         <div className="text-left">
+                            <h1 className="text-lg font-black text-slate-800 tracking-tight uppercase leading-none">SZCZEGÓŁOWA ANALIZA PRZEZNACZENIA</h1>
+                            <p className="text-[8px] font-bold text-slate-400 tracking-[0.25em] uppercase mt-1">PROGRAMY ENERGETYCZNE ETAPÓW</p>
+                         </div>
+                      </div>
+                   </div>
+
+                   {/* Section 1: The Destiny Stages */}
+                   <div className="mb-6">
+                      <h3 className="text-xs font-black text-slate-400 tracking-wider uppercase mb-3 text-left">PROGRAMY ETAPÓW ŻYCIA</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                         {/* Box 1 */}
+                         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col justify-between text-left">
+                            <div>
+                               <p className="text-[8px] font-black text-slate-405 uppercase">1 pr-e — ZNALEZIENIE SIEBIE</p>
+                               <p className="text-[11px] text-slate-500 mt-1">Energia Niebios i Ziemi łącząca się w harmonijną wewnętrzną wibrację.</p>
+                               <div className="flex gap-4 mt-2 text-[10px] text-slate-450 border-t pt-2 border-slate-200/50">
+                                  <div><span className="font-bold text-slate-400">Niebo:</span> <span className="font-black text-slate-700">{activeMatrix.sky}</span></div>
+                                  <div><span className="font-bold text-slate-400">Ziemia:</span> <span className="font-black text-slate-700">{activeMatrix.earth}</span></div>
+                               </div>
+                            </div>
+                            <div className="flex justify-end mt-4">
+                               <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs font-mono">
+                                  {activeMatrix.personal}
+                               </div>
+                            </div>
+                         </div>
+
+                         {/* Box 2 */}
+                         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col justify-between text-left">
+                            <div>
+                               <p className="text-[8px] font-black text-slate-405 uppercase">2 pr-e — SOCJALIZACJA</p>
+                               <p className="text-[11px] text-slate-500 mt-1">Sygnały rodów męskich i żeńskich wpływające na relacje ze społeczeństwem.</p>
+                               <div className="flex gap-4 mt-2 text-[10px] text-slate-450 border-t pt-2 border-slate-200/50">
+                                  <div><span className="font-bold text-slate-400">Męska:</span> <span className="font-black text-slate-700">{activeMatrix.male}</span></div>
+                                  <div><span className="font-bold text-slate-400">Żeńska:</span> <span className="font-black text-slate-700">{activeMatrix.female}</span></div>
+                               </div>
+                            </div>
+                            <div className="flex justify-end mt-4">
+                               <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs font-mono">
+                                  {activeMatrix.social}
+                               </div>
+                            </div>
+                         </div>
+
+                         {/* Box 3 */}
+                         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col justify-between text-left">
+                            <div>
+                               <p className="text-[8px] font-black text-slate-405 uppercase">3 pr-e — PRZEZNACZENIE DUCHOWE</p>
+                               <p className="text-[11px] text-slate-500 mt-1 pr-6 leading-relaxed">Głęboka wibracja ostatecznego przeznaczenia duchowego i dojrzałości energetycznej.</p>
+                            </div>
+                            <div className="flex justify-end mt-4">
+                               <div className="w-9 h-9 rounded-full bg-purple-50 text-purple-700 border border-purple-100 flex items-center justify-center font-black text-xs font-mono">
+                                  {activeMatrix.spiritual}
+                               </div>
+                            </div>
+                         </div>
+
+                         {/* Box 4 */}
+                         <div className="p-4 bg-slate-900 text-white rounded-2xl flex flex-col justify-between text-left">
+                            <div>
+                               <p className="text-[8px] font-black text-slate-300 uppercase">4 pr-e — KORZYŚĆ PLANETARNA</p>
+                               <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">Wpływ planet i kosmicznych energii na końcowy bilans życiowej korzyści.</p>
+                            </div>
+                            <div className="flex justify-end mt-4">
+                               <div className="w-9 h-9 rounded-full bg-white text-slate-900 flex items-center justify-center font-black text-xs font-mono">
+                                  {activeMatrix.planetary}
+                               </div>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+
+                   {/* Section 2: Code metrics */}
+                   <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between text-left">
+                         <div>
+                            <p className="text-[9px] font-black text-slate-405 uppercase">SIŁA PRZODKÓW</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">Sumaryczna energia rodu</p>
+                         </div>
+                         <span className="text-lg font-black text-slate-800 font-mono bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                            {activeMatrix.ancestralStrength}
+                         </span>
+                      </div>
+
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between text-left">
+                         <div>
+                            <p className="text-[9px] font-black text-slate-405 uppercase">WEWNĘTRZNY KOD SIŁY</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">Korytarz unikalnego spektrum</p>
+                         </div>
+                         <div className="flex items-center gap-1.5 font-mono text-xs font-black">
+                            <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">{activeMatrix.E}</span>
+                            <span>•</span>
+                            <span className="bg-slate-150 px-2 py-1 rounded">{activeMatrix.internalPower}</span>
+                            <span>•</span>
+                            <span className="bg-amber-100 text-amber-805 px-2 py-1 rounded">
+                               {activeMatrix.E + activeMatrix.internalPower > 22 
+                                 ? String(activeMatrix.E + activeMatrix.internalPower).split('').reduce((a,b)=>a+Number(b),0) > 22
+                                   ? (String(activeMatrix.E + activeMatrix.internalPower).split('').reduce((a,b)=>a+Number(b),0) - 22)
+                                   : String(activeMatrix.E + activeMatrix.internalPower).split('').reduce((a,b)=>a+Number(b),0)
+                                 : activeMatrix.E + activeMatrix.internalPower}
+                            </span>
+                         </div>
+                      </div>
+                   </div>
+
+                   {/* Section 3: Detailed Interpretations */}
+                   {view !== 'common' && (
+                      <div className="text-left">
+                         <h3 className="text-xs font-black text-slate-400 tracking-wider uppercase mb-3">KLUCZOWE WIBRACJE I PORADY DUCHOWE</h3>
+                         <div className="space-y-3">
+                            {[
+                               { title: 'Twój Charakter (Moc Środka)', val: activeMatrix.E },
+                               { title: 'Twoja Wyższa Jaźń (Duchowy drogowskaz)', val: activeMatrix.B },
+                               { title: 'Karma Przeznaczenia (Główne wyzwanie)', val: activeMatrix.D }
+                            ].map((item, idx) => {
+                               const guide = ARCANA_GUIDE[item.val];
+                               const name = ARCANA_NAMES[item.val];
+                               if (!guide) return null;
+                               return (
+                                  <div key={idx} className="p-4 rounded-xl bg-slate-50/70 border border-slate-100">
+                                     <div className="flex items-center gap-2 mb-1.5">
+                                        <span className="w-6 h-6 rounded-full bg-purple-150 text-[#a855f7] flex items-center justify-center font-black text-xs font-mono border border-purple-200">
+                                           {item.val}
+                                        </span>
+                                        <span className="text-xs font-black text-slate-800">{item.title}: {name}</span>
+                                     </div>
+                                     <p className="text-[9px] text-[#a855f7] font-bold mb-1 uppercase tracking-wide">{guide.keywords}</p>
+                                     <p className="text-[11px] text-slate-500 leading-relaxed italic border-l-2 border-slate-200 pl-2">"{guide.advice}"</p>
+                                  </div>
+                               );
+                            })}
+                         </div>
+                      </div>
+                   )}
+                </div>
+
+                {/* Footer 2 */}
+                <div className="flex justify-between items-center border-t pt-5 border-slate-100 text-[10px] text-slate-400">
+                   <span className="text-left">Raport wygenerowany dla: <b>{person1.name || 'Użytkownik'}</b> ({person1.dob})</span>
+                   <span className="font-mono">Strona 2 z 2 • Jmoon-numerology.com</span>
+                </div>
+             </div>
+          </div>
+        )}
       </div>
+
+      {/* Modern minimal footer with user requested links */}
+      <footer className="mt-8 border-t border-slate-200/60 pt-6 pb-12 w-full text-xs text-slate-400 font-medium relative z-10" id="app-footer">
+        <div className="max-w-[1300px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span className="text-slate-400 font-mono tracking-wide text-[11px]" id="footer-copyright">
+            © 2023-2026 Jmoon-numerology.com
+          </span>
+          <div className="flex items-center gap-6 text-[11px] sm:text-xs" id="footer-links">
+            <a 
+              href="https://jmoon-numerology.com/regulamin" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-slate-600 transition-colors duration-150 decoration-transparent hover:underline"
+              id="link-regulamin"
+            >
+              Regulamin
+            </a>
+            <span className="text-slate-200">•</span>
+            <a 
+              href="https://jmoon-numerology.com/polityka_prywatnosci" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-slate-600 transition-colors duration-150 decoration-transparent hover:underline"
+              id="link-privacy"
+            >
+              Polityka prywatności
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
 
-function InsightRow({ label, val, isCompatibility }: { label: string; val: number; isCompatibility?: boolean }) {
+/* Insight mini row helper */
+function InsightItem({ label, val }: { label: string; val: number }) {
   const guide = ARCANA_GUIDE[val];
   const name = ARCANA_NAMES[val];
-  
   if (!guide) return null;
 
   return (
-    <div className="bg-white/40 p-6 rounded-[2.5rem] border border-white/60 shadow-sm hover:shadow-md transition-all group">
-      <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-purple-200 shrink-0">
-          {val}
-        </div>
-        <div className="space-y-1">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
-          <div className="flex items-center gap-2">
-            <h4 className="text-lg font-black text-slate-900">{name}</h4>
-          </div>
-          <p className="text-[11px] font-bold text-purple-500 mb-2">{guide.keywords}</p>
-          
-          <div className="space-y-3">
-             <div className="p-4 bg-white/60 rounded-2xl border border-purple-50 text-xs italic text-slate-600 leading-relaxed group-hover:text-purple-700 transition-colors">
-               "{guide.advice}"
-             </div>
-             {isCompatibility && (
-               <div className="p-4 bg-pink-50/50 rounded-2xl border border-pink-100 text-xs font-bold text-pink-700 leading-relaxed">
-                  <span className="block text-[9px] uppercase tracking-widest text-pink-400 mb-1">Porady dla par:</span>
-                  {guide.coupleAdvice}
-               </div>
-             )}
-          </div>
-        </div>
-      </div>
+    <div className="p-4 rounded-2xl bg-slate-50/50 border border-slate-100">
+       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">{label}</span>
+       <div className="flex items-center gap-2 mb-2">
+         <span className="w-8 h-8 rounded-full bg-purple-150 text-[#a855f7] flex items-center justify-center font-black text-sm font-mono border border-purple-200/50">
+           {val}
+         </span>
+         <span className="font-extrabold text-sm text-slate-800">{name}</span>
+       </div>
+       <p className="text-[10px] text-[#a855f7] font-bold mb-1 leading-tight">{guide.keywords}</p>
+       <p className="text-[11px] text-slate-500 leading-relaxed italic">"{guide.advice}"</p>
     </div>
   );
 }
 
-function DestinyCard({ label, subLabel, val1, val2, sum, labels, dark }: any) {
-  return (
-    <div className={`p-6 rounded-[2.5rem] border ${dark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900'} shadow-sm`}>
-      <div className="flex flex-col h-full">
-        <div className="mb-4">
-          <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">{label}</p>
-          <h3 className="text-sm font-black uppercase tracking-wider">{subLabel}</h3>
-        </div>
-        
-        <div className="flex items-center justify-between mt-auto">
-          <div className="flex gap-4">
-            <div className="text-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm border ${dark ? 'border-slate-700' : 'border-slate-100'}`}>{val1}</div>
-              <p className="text-[8px] mt-1 font-bold opacity-30 tracking-tighter">{labels[0]}</p>
-            </div>
-            <div className="text-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm border ${dark ? 'border-slate-700' : 'border-slate-100'}`}>{val2}</div>
-              <p className="text-[8px] mt-1 font-bold opacity-30 tracking-tighter">{labels[1]}</p>
-            </div>
-          </div>
-          <div className="flex flex-col items-end">
-             <div className="w-14 h-14 rounded-full bg-purple-600 shadow-xl shadow-purple-200 flex items-center justify-center text-white text-xl font-black">{sum}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DestinyMini({ label, subLabel, val, dark }: any) {
-  return (
-    <div className={`p-6 rounded-[2.5rem] flex-1 border ${dark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900'} shadow-sm`}>
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1 text-left">{label}</p>
-          <h3 className="text-sm font-black uppercase tracking-wider text-left">{subLabel}</h3>
-        </div>
-        <div className={`w-14 h-14 rounded-full ${dark ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'} flex items-center justify-center text-xl font-black shrink-0 shadow-lg shadow-black/10`}>
-          {val}
-        </div>
-      </div>
-    </div>
-  );
-}
-
+/* Health Table component custom tailored like Image 2 */
 function HealthTable({ chakras }: { chakras: any[] }) {
-  const labels = ['Fizyka', 'Energia', 'Emocja', 'Czakra'];
   const chakraSpecs = [
-    { bg: 'bg-purple-600', color: 'text-purple-600', name: '7' },
-    { bg: 'bg-blue-600', color: 'text-blue-600', name: '6' },
-    { bg: 'bg-cyan-500', color: 'text-cyan-500', name: '5' },
-    { bg: 'bg-green-600', color: 'text-green-600', name: '4' },
-    { bg: 'bg-yellow-400', color: 'text-yellow-500', name: '3' },
-    { bg: 'bg-orange-500', color: 'text-orange-500', name: '2' },
-    { bg: 'bg-red-600', color: 'text-red-600', name: '1' },
+    { name: '7. Sahasrara (misja)', color: 'bg-purple-600', text: 'text-purple-600' },
+    { name: '6. Ajna (los egregory)', color: 'bg-blue-600', text: 'text-blue-600' },
+    { name: '5. Vishuddha', color: 'bg-cyan-500', text: 'text-cyan-500' },
+    { name: '4. Anahata', color: 'bg-green-600', text: 'text-green-600' },
+    { name: '3. Manipura', color: 'bg-yellow-400', text: 'text-yellow-500' },
+    { name: '2. Svadhistana', color: 'bg-orange-500', text: 'text-orange-500' },
+    { name: '1. Muladhara', color: 'bg-red-600', text: 'text-red-500' },
   ];
 
   return (
-    <div className="w-full space-y-4">
-      <div className="grid grid-cols-4 gap-4 px-4">
-        {labels.map(l => (
-          <div key={l} className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{l}</div>
-        ))}
+    <div className="w-full">
+      {/* Table Headers */}
+      <div className="grid grid-cols-4 gap-2 mb-4 pb-2 border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center">
+        <span>FIZYKA</span>
+        <span>ENERGIA</span>
+        <span>EMOCJA</span>
+        <span>CZAKRA</span>
       </div>
-      
-      <div className="space-y-2">
+
+      {/* Row List */}
+      <div className="space-y-3">
         {chakras.slice(0, 7).map((chakra, idx) => {
           const spec = chakraSpecs[idx];
           return (
-            <motion.div 
-              key={chakra.name} 
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="grid grid-cols-4 gap-3 items-center bg-white/40 p-2 rounded-2xl border border-white/60 hover:bg-white/80 transition-colors"
-            >
-              <div className="text-2xl font-black text-slate-800 text-center font-mono">{chakra.physics}</div>
-              <div className="text-2xl font-black text-slate-800 text-center font-mono">{chakra.energy}</div>
-              <div className={`text-2xl font-black ${spec.color} text-center font-mono`}>{chakra.emotion}</div>
-              <div className="flex justify-center">
-                <div className={`w-10 h-10 rounded-xl ${spec.bg} text-white flex items-center justify-center text-lg font-black shadow-lg`}>
-                  {spec.name}
+             <div 
+               key={idx} 
+               className="grid grid-cols-4 gap-2 items-center text-center py-1 transition-colors hover:bg-slate-50/50 rounded-xl"
+             >
+                {/* Physical */}
+                <span className="text-base font-black text-slate-800 font-mono">
+                  {chakra.physics}
+                </span>
+
+                {/* Energy */}
+                <span className="text-base font-black text-slate-800 font-mono">
+                  {chakra.energy}
+                </span>
+
+                {/* Emotion (colored dynamically by chakra color) */}
+                <span className={`text-base font-black ${spec.text} font-mono`}>
+                  {chakra.emotion}
+                </span>
+
+                {/* Chakra rounded sticker circle */}
+                <div className="flex justify-center">
+                   <div 
+                     className={`w-8 h-8 rounded-full ${spec.color} text-white flex items-center justify-center text-xs font-black shadow-md shadow-black/5 font-mono cursor-pointer transition-transform hover:scale-105`}
+                     title={spec.name}
+                   >
+                     {7 - idx}
+                   </div>
                 </div>
-              </div>
-            </motion.div>
+             </div>
           );
         })}
-      </div>
 
-      {/* Summary Row */}
-      {chakras[7] && (
-        <div className="mt-6 pt-6 border-t-2 border-dashed border-slate-100 px-2">
-          <div className="grid grid-cols-4 gap-3 items-center">
-            <div className="text-2xl font-black text-slate-300 text-center font-mono">{chakras[7].physics}</div>
-            <div className="text-2xl font-black text-slate-300 text-center font-mono">{chakras[7].energy}</div>
-            <div className="text-3xl font-black text-slate-900 text-center font-mono drop-shadow-sm">{chakras[7].emotion}</div>
-            <div className="flex justify-center">
-              <div className="w-10 h-10 bg-slate-900 text-white flex items-center justify-center text-xl font-black rounded-xl shadow-xl">Σ</div>
-            </div>
-          </div>
-        </div>
-      )}
+        {/* Total/Summary Row (Razem) */}
+        {chakras[7] && (
+           <div className="grid grid-cols-4 gap-2 items-center text-center mt-5 pt-3 border-t-2 border-dashed border-slate-100">
+              <span className="text-base font-black text-slate-400 font-mono">
+                {chakras[7].physics}
+              </span>
+              <span className="text-base font-black text-slate-400 font-mono">
+                {chakras[7].energy}
+              </span>
+              <span className="text-lg font-black text-slate-800 font-mono">
+                {chakras[7].emotion}
+              </span>
+              <div className="flex justify-center">
+                 <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-black shadow-sm font-mono">
+                   Σ
+                 </div>
+              </div>
+           </div>
+        )}
+      </div>
     </div>
   );
 }
 
+/* Stunning minimal Matrix Svg containing precisely calculated coordinates */
 function MatrixSvg({ data }: { data: MatrixData }) {
   return (
-    <svg viewBox="0 0 500 500" className="w-full h-auto drop-shadow-2xl">
+    <svg viewBox="0 0 500 500" className="w-full h-auto drop-shadow-sm select-none" id="matrix-svg-diagram">
       <defs>
+        {/* Soft floating shadows for nodes */}
+        <filter id="soft-shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#0f172a" floodOpacity="0.08" />
+        </filter>
         <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="3" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
         <linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#bf953f" />
-          <stop offset="25%" stopColor="#fcf6ba" />
-          <stop offset="50%" stopColor="#b38728" />
-          <stop offset="75%" stopColor="#fcf6ba" />
-          <stop offset="100%" stopColor="#aa771c" />
+          <stop offset="0%" stopColor="#d97706" />
+          <stop offset="25%" stopColor="#fef08a" />
+          <stop offset="50%" stopColor="#ca8a04" />
+          <stop offset="75%" stopColor="#fef08a" />
+          <stop offset="100%" stopColor="#b45309" />
         </linearGradient>
       </defs>
-      
+
       <g style={{ isolation: 'isolate' }}>
-        {/* Outer Circle Glow */}
-        <circle cx="250" cy="250" r="200" fill="none" stroke="url(#gold-gradient)" strokeWidth="0.5" strokeDasharray="4 4" strokeOpacity="0.5" />
+        {/* Background concentric sacred geometry circles */}
+        <circle cx="250" cy="250" r="200" fill="none" stroke="#e2e8f0" strokeWidth="1" />
+        <circle cx="250" cy="250" r="150" fill="none" stroke="#e2e8f0" strokeWidth="0.75" strokeDasharray="3 3" />
+        <circle cx="250" cy="250" r="100" fill="none" stroke="#cbd5e1" strokeWidth="0.75" strokeDasharray="4 4" />
+        <circle cx="250" cy="250" r="50" fill="none" stroke="#e2e8f0" strokeWidth="0.75" strokeDasharray="2 2" />
+
+        {/* Straight Axes */}
+        <line x1="50" y1="250" x2="450" y2="250" stroke="#cbd5e1" strokeWidth="1.25" />
+        <line x1="250" y1="50" x2="250" y2="450" stroke="#cbd5e1" strokeWidth="1.25" />
         
-        {/* Core Geometry (Square and Rhombus) */}
+        {/* Diagonal Axes (Linia Mężczyzn - Blue, Linia Kobiet - Pink) */}
+        <line x1="109" y1="109" x2="391" y2="391" stroke="#3b82f6" strokeWidth="1.5" />
+        <line x1="391" y1="109" x2="109" y2="391" stroke="#f43f5e" strokeWidth="1.5" />
+
+        {/* Diagonal text labels matching Image 1 */}
+        <text x="165" y="152" transform="rotate(45 165 152)" style={{ fontFamily: 'Inter, sans-serif', fontSize: '8px', fontWeight: '800', fill: '#1d4ed8', textAnchor: 'middle' }}>Linia Mężczyzn</text>
+        <text x="335" y="152" transform="rotate(-45 335 152)" style={{ fontFamily: 'Inter, sans-serif', fontSize: '8px', fontWeight: '800', fill: '#be185d', textAnchor: 'middle' }}>Linia Kobiet</text>
+
+        {/* Straight Ancestral Square (F -> G -> H -> I -> F) */}
+        <path d="M109 109 L391 109 L391 391 L109 391 Z" fill="none" stroke="#64748b" strokeWidth="1.5" strokeDasharray="4 4" />
+
+        {/* Core Golden Destiny Diamond (B -> C -> D -> A -> B) */}
         <path d="M250 50 L450 250 L250 450 L50 250 Z" fill="none" stroke="url(#gold-gradient)" strokeWidth="3" filter="url(#soft-glow)" />
-        <path d="M109 109 L391 109 L391 391 L109 391 Z" fill="none" stroke="url(#gold-gradient)" strokeWidth="1.5" strokeDasharray="6 6" strokeOpacity="0.6" />
 
-        {/* Diagonal Axis (Intermediate) */}
-        <line x1="50" y1="250" x2="450" y2="250" stroke="#f1f5f9" strokeWidth="1.5" strokeOpacity="0.3" />
-        <line x1="250" y1="50" x2="250" y2="450" stroke="#f1f5f9" strokeWidth="1.5" strokeOpacity="0.3" />
-        <line x1="109" y1="109" x2="391" y2="391" stroke="#f1f5f9" strokeWidth="1" strokeOpacity="0.2" />
-        <line x1="391" y1="109" x2="109" y2="391" stroke="#f1f5f9" strokeWidth="1" strokeOpacity="0.2" />
+        {/* Love & Money Line (connecting D1 [250, 350] and C1 [350, 250]) */}
+        <line x1="250" y1="350" x2="350" y2="250" stroke="#1e293b" strokeWidth="1.5" strokeDasharray="3 3" />
+
+        {/* ========================================================= */}
+        {/* INTERMEDIATE AXIS NODES (Only the correct/standard ones) */}
+        {/* ========================================================= */}
         
-        {/* Major Nodes (Destiny Cross) */}
-        <circle cx="250" cy="50" r="18" fill="#fff" stroke="#9333ea" strokeWidth="3" filter="url(#soft-glow)" />
-        <circle cx="450" cy="250" r="18" fill="#fff" stroke="#dc2626" strokeWidth="3" filter="url(#soft-glow)" />
-        <circle cx="250" cy="450" r="18" fill="#fff" stroke="#dc2626" strokeWidth="3" filter="url(#soft-glow)" />
-        <circle cx="50" cy="250" r="18" fill="#fff" stroke="#9333ea" strokeWidth="3" filter="url(#soft-glow)" />
-        
-        {/* Ancestral Nodes (Corners) */}
-        <circle cx="109" cy="109" r="15" fill="#fff" stroke="#475569" strokeWidth="2.5" />
-        <circle cx="391" cy="109" r="15" fill="#fff" stroke="#475569" strokeWidth="2.5" />
-        <circle cx="391" cy="391" r="15" fill="#fff" stroke="#475569" strokeWidth="2.5" />
-        <circle cx="109" cy="391" r="15" fill="#fff" stroke="#475569" strokeWidth="2.5" />
-
-        {/* Center Focal Node */}
-        <circle cx="250" cy="250" r="24" fill="#fff" stroke="url(#gold-gradient)" strokeWidth="6" filter="url(#soft-glow)" />
-
-        {/* Numeric Overlay */}
-        <g style={{ fontFamily: 'Inter, Arial, sans-serif', fontWeight: '900', textAnchor: 'middle', fill: '#1e293b' }}>
-           {/* Center */}
-           <text x="250" y="259" style={{ fontSize: '20px' }}>{data.E}</text>
-           
-           {/* Destiny Cross */}
-           <text x="50" y="256" style={{ fontSize: '15px' }}>{data.A}</text>
-           <text x="250" y="56" style={{ fontSize: '15px' }}>{data.B}</text>
-           <text x="450" y="256" style={{ fontSize: '15px' }}>{data.C}</text>
-           <text x="250" y="456" style={{ fontSize: '15px' }}>{data.D}</text>
-
-           {/* Ancestral Points */}
-           <text x="109" y="115" style={{ fontSize: '13px', fill: '#475569' }}>{data.F}</text>
-           <text x="391" y="115" style={{ fontSize: '13px', fill: '#475569' }}>{data.G}</text>
-           <text x="391" y="397" style={{ fontSize: '13px', fill: '#475569' }}>{data.H}</text>
-           <text x="109" y="397" style={{ fontSize: '13px', fill: '#475569' }}>{data.I}</text>
+        {/* Left Axis (A to E) */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="100" cy="250" r="10" fill="white" stroke="#3b82f6" strokeWidth="1.5" />
+          <text x="100" y="250" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#1e3a8a', textAnchor: 'middle' }}>{data.A2}</text>
         </g>
+        <g filter="url(#soft-shadow)">
+          <circle cx="150" cy="250" r="10" fill="white" stroke="#06b6d4" strokeWidth="1.5" />
+          <text x="150" y="250" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#0891b2', textAnchor: 'middle' }}>{data.A1}</text>
+        </g>
+        <g filter="url(#soft-shadow)">
+          <circle cx="200" cy="250" r="10" fill="white" stroke="#10b981" strokeWidth="1.5" />
+          <text x="200" y="250" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#065f46', textAnchor: 'middle' }}>{data.hearth}</text>
+        </g>
+
+        {/* Top Axis (B to E) */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="250" cy="100" r="10" fill="white" stroke="#3b82f6" strokeWidth="1.5" />
+          <text x="250" y="100" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#1e3a8a', textAnchor: 'middle' }}>{data.B2}</text>
+        </g>
+        <g filter="url(#soft-shadow)">
+          <circle cx="250" cy="150" r="10" fill="white" stroke="#06b6d4" strokeWidth="1.5" />
+          <text x="250" y="150" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#0891b2', textAnchor: 'middle' }}>{data.B1}</text>
+        </g>
+        <g filter="url(#soft-shadow)">
+          <circle cx="250" cy="200" r="10" fill="white" stroke="#10b981" strokeWidth="1.5" />
+          <text x="250" y="200" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#065f46', textAnchor: 'middle' }}>{data.hearthB}</text>
+        </g>
+
+        {/* Right Axis (C to E) */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="400" cy="250" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
+          <text x="400" y="250" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.C2}</text>
+        </g>
+        <g filter="url(#soft-shadow)">
+          <circle cx="350" cy="250" r="10" fill="white" stroke="#f97316" strokeWidth="1.5" />
+          <text x="350" y="250" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#c2410c', textAnchor: 'middle' }}>{data.C1}</text>
+        </g>
+
+        {/* Bottom Axis (D to E) */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="250" cy="400" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
+          <text x="250" y="400" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.D2}</text>
+        </g>
+        <g filter="url(#soft-shadow)">
+          <circle cx="250" cy="350" r="10" fill="white" stroke="#f97316" strokeWidth="1.5" />
+          <text x="250" y="350" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#c2410c', textAnchor: 'middle' }}>{data.D1}</text>
+        </g>
+
+        {/* ========================================================= */}
+        {/* INTERMEDIATE DIAGONAL ANCESTRAL NODES */}
+        {/* ========================================================= */}
+
+        {/* Top-Left Diagonal */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="144.25" cy="144.25" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
+          <text x="144.25" y="144.25" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.F2}</text>
+        </g>
+        <g filter="url(#soft-shadow)">
+          <circle cx="179.5" cy="179.5" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
+          <text x="179.5" y="179.5" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.F1}</text>
+        </g>
+
+        {/* Top-Right Diagonal */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="355.75" cy="144.25" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
+          <text x="355.75" y="144.25" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.G2}</text>
+        </g>
+        <g filter="url(#soft-shadow)">
+          <circle cx="320.5" cy="179.5" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
+          <text x="320.5" y="179.5" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.G1}</text>
+        </g>
+
+        {/* Bottom-Right Diagonal */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="355.75" cy="355.75" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
+          <text x="355.75" y="355.75" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.H2}</text>
+        </g>
+        <g filter="url(#soft-shadow)">
+          <circle cx="320.5" cy="320.5" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
+          <text x="320.5" y="320.5" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.H1}</text>
+        </g>
+
+        {/* Bottom-Left Diagonal */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="144.25" cy="355.75" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
+          <text x="144.25" y="355.75" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.I2}</text>
+        </g>
+        <g filter="url(#soft-shadow)">
+          <circle cx="179.5" cy="320.5" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
+          <text x="179.5" y="320.5" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.I1}</text>
+        </g>
+
+        {/* ========================================================= */}
+        {/* RELATIONSHIP & MONEY NODES */}
+        {/* ========================================================= */}
+
+        {/* love node (Relationship point, 275, 325) */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="275" cy="325" r="10" fill="white" stroke="#ec4899" strokeWidth="2" />
+          <text x="275" y="325" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#be185d', textAnchor: 'middle' }}>{data.love}</text>
+        </g>
+        {/* Tiny floating pink heart graphic */}
+        <g transform="translate(254, 324) scale(0.65)">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ec4899" />
+        </g>
+
+        {/* love1 node (Shared balance point, 300, 300) */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="300" cy="300" r="10" fill="white" stroke="#1e293b" strokeWidth="2" />
+          <text x="300" y="300" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#0f172a', textAnchor: 'middle' }}>{data.love1}</text>
+        </g>
+
+        {/* money node (Finance point, 325, 275) */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="325" cy="275" r="10" fill="white" stroke="#eab308" strokeWidth="2" />
+          <text x="325" y="275" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#ca8a04', textAnchor: 'middle' }}>{data.money}</text>
+        </g>
+        {/* Tiny golden dollar badge */}
+        <g transform="translate(328, 258) scale(0.7)">
+          <circle cx="12" cy="12" r="9" fill="#eab308" />
+          <text x="12" y="15.5" fill="white" fontSize="10" fontWeight="900" textAnchor="middle" fontFamily="sans-serif">$</text>
+        </g>
+
+        {/* ========================================================= */}
+        {/* MAJOR CORNER/CARDINAL NODES */}
+        {/* ========================================================= */}
+
+        {/* Center Focal Circle (Yellow / Gold border representing comfort zone E) */}
+        <circle cx="250" cy="250" r="22" fill="white" stroke="url(#gold-gradient)" strokeWidth="4.5" filter="url(#soft-shadow)" />
+        <text x="250" y="250" dy="5.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '16px', fill: '#b45309', textAnchor: 'middle' }}>
+          {data.E}
+        </text>
+        <text x="250" y="286" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '800', fontSize: '9px', fill: '#b45309', textAnchor: 'middle' }}>Strefa Komfortu</text>
+
+        {/* Top Node (B) for spiritual (20 yrs) - Purple border */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="250" cy="50" r="17" fill="white" stroke="#c084fc" strokeWidth="3" />
+          <text x="250" y="50" dy="5.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#7e22ce', textAnchor: 'middle' }}>
+            {data.B}
+          </text>
+        </g>
+
+        {/* Left Node (A) for birth (0 yrs) - Purple border */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="50" cy="250" r="17" fill="white" stroke="#c084fc" strokeWidth="3" />
+          <text x="50" y="250" dy="5.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#7e22ce', textAnchor: 'middle' }}>
+            {data.A}
+          </text>
+        </g>
+
+        {/* Bottom Node (D) for ancestral/karma (60 yrs) - Red border */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="250" cy="450" r="17" fill="white" stroke="#f87171" strokeWidth="3" />
+          <text x="250" y="450" dy="5.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#dc2626', textAnchor: 'middle' }}>
+            {data.D}
+          </text>
+        </g>
+
+        {/* Right Node (C) for material/finance (40 yrs) - Orange/Red border */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="450" cy="250" r="17" fill="white" stroke="#f87171" strokeWidth="3" />
+          <text x="450" y="250" dy="5.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#dc2626', textAnchor: 'middle' }}>
+            {data.C}
+          </text>
+        </g>
+
+        {/* Top-Left node (F) (10 yrs) - Slate border */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="109" cy="109" r="15" fill="white" stroke="#475569" strokeWidth="2" />
+          <text x="109" y="109" dy="4.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '12px', fill: '#334155', textAnchor: 'middle' }}>
+            {data.F}
+          </text>
+        </g>
+
+        {/* Top-Right node (G) (30 yrs) - Slate border */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="391" cy="109" r="15" fill="white" stroke="#475569" strokeWidth="2" />
+          <text x="391" y="109" dy="4.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '12px', fill: '#334155', textAnchor: 'middle' }}>
+            {data.G}
+          </text>
+        </g>
+
+        {/* Bottom-Right node (H) (50 yrs) - Slate border */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="391" cy="391" r="15" fill="white" stroke="#475569" strokeWidth="2" />
+          <text x="391" y="391" dy="4.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '12px', fill: '#334155', textAnchor: 'middle' }}>
+            {data.H}
+          </text>
+        </g>
+
+        {/* Bottom-Left node (I) (70 yrs) - Slate border */}
+        <g filter="url(#soft-shadow)">
+          <circle cx="109" cy="391" r="15" fill="white" stroke="#475569" strokeWidth="2" />
+          <text x="109" y="391" dy="4.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '12px', fill: '#334155', textAnchor: 'middle' }}>
+            {data.I}
+          </text>
+        </g>
+
       </g>
     </svg>
   );
 }
-
-// Remove AgeMap function as it's no longer used

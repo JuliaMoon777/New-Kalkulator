@@ -2,5 +2,5 @@
   "name": "Matryca Losu",
   "description": "Oblicza osobiste matryce przeznaczenia oraz kompatybilność par w oparciu o daty urodzenia i system 22 Arkanów.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

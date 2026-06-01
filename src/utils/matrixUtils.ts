@@ -220,9 +220,9 @@ export function calculateMatrix(birthdate: string): MatrixData {
     { name: "SAHASRARA (misja)", physics: A, energy: B, emotion: reduceTo22(A + B) },
     { name: "AJNA (los egregory)", physics: A2, energy: B2, emotion: reduceTo22(A2 + B2) },
     { name: "VISHUDDHA (postrzeganie siebie)", physics: A1, energy: B1, emotion: reduceTo22(A1 + B1) },
-    { name: "ANAHATA (związki)", physics: E, energy: E, emotion: E },
-    { name: "MANIPURA (status, pieniądze)", physics: C1, energy: D1, emotion: reduceTo22(C1 + D1) },
-    { name: "SVADHISTANA (radość)", physics: C2, energy: D2, emotion: reduceTo22(C2 + D2) },
+    { name: "ANAHATA (związki)", physics: hearth, energy: hearthB, emotion: reduceTo22(hearth + hearthB) },
+    { name: "MANIPURA (status, pieniądze)", physics: E, energy: E, emotion: reduceTo22(E + E) },
+    { name: "SVADHISTANA (radość)", physics: C1, energy: D1, emotion: reduceTo22(C1 + D1) },
     { name: "MULADHARA (materia, ciało)", physics: C, energy: D, emotion: reduceTo22(C + D) },
   ];
 
@@ -271,17 +271,17 @@ export function calculateCompatibility(m1: MatrixData, m2: MatrixData): MatrixDa
 }
 
 export const ARCANA_NAMES: Record<number, string> = {
-  1: 'Mag',
+  1: 'Magik',
   2: 'Kapłanka',
   3: 'Cesarzowa',
   4: 'Cesarz',
-  5: 'Hierofant',
+  5: 'Kapłan',
   6: 'Kochankowie',
   7: 'Rydwan',
   8: 'Sprawiedliwość',
-  9: 'Eremita',
+  9: 'Pustelnik',
   10: 'Koło Fortuny',
-  11: 'Moc',
+  11: 'Siła',
   12: 'Wisielec',
   13: 'Śmierć',
   14: 'Umiarkowanie',
@@ -290,7 +290,7 @@ export const ARCANA_NAMES: Record<number, string> = {
   17: 'Gwiazda',
   18: 'Księżyc',
   19: 'Słońce',
-  20: 'Sąd',
+  20: 'Sąd Ostateczny',
   21: 'Świat',
   22: 'Głupiec',
 };

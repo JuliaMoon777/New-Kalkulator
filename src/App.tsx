@@ -42,7 +42,67 @@ export default function App() {
 
   const downloadPdf = async () => {
     setIsGeneratingPdf(true);
+
+    const originalGetComputedStyle = window.getComputedStyle;
+    const originalStyleSheets = document.styleSheets;
+
+    // Helper to resolve oklch colors using canvas dynamically
+    const resolveOklchColors = (value: any) => {
+      if (typeof value !== 'string') return value;
+      if (!value.includes('oklch')) return value;
+
+      return value.replace(/oklch\([^)]+\)/gi, (match) => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 1;
+          canvas.height = 1;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = match;
+            const resolved = ctx.fillStyle;
+            if (resolved && resolved !== 'rgb(0, 0, 0)' && !resolved.includes('oklch')) {
+              return resolved;
+            }
+          }
+        } catch (e) {
+          // fallback ignore
+        }
+        return 'rgb(248, 250, 252)'; // Safe light slate-50 equivalent fallback
+      });
+    };
+
     try {
+      // 1. Temporarily redefine document.styleSheets to be empty to avoid html2canvas stylesheet parsing crash
+      Object.defineProperty(document, 'styleSheets', {
+        get() {
+          return [];
+        },
+        configurable: true
+      });
+
+      // 2. Temporarily hijack window.getComputedStyle to translate computed oklch colors directly to rgb styles
+      window.getComputedStyle = function (element, pseudoElt) {
+        const style = originalGetComputedStyle(element, pseudoElt);
+        return new Proxy(style, {
+          get(target, prop, receiver) {
+            if (prop === 'getPropertyValue') {
+              return function (propertyName: string) {
+                const val = target.getPropertyValue(propertyName);
+                return resolveOklchColors(val);
+              };
+            }
+            const value = Reflect.get(target, prop, receiver);
+            if (typeof value === 'string') {
+              return resolveOklchColors(value);
+            }
+            if (typeof value === 'function') {
+              return value.bind(target);
+            }
+            return value;
+          }
+        });
+      };
+
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'px',
@@ -84,6 +144,18 @@ export default function App() {
     } catch (err) {
       console.error('Error during pdf export:', err);
     } finally {
+      // 3. Perfect clean-up restoring global state
+      try {
+        delete (document as any).styleSheets;
+      } catch (e) {
+        Object.defineProperty(document, 'styleSheets', {
+          get() {
+            return originalStyleSheets;
+          },
+          configurable: true
+        });
+      }
+      window.getComputedStyle = originalGetComputedStyle;
       setIsGeneratingPdf(false);
     }
   };

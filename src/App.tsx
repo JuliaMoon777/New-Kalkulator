@@ -5,28 +5,31 @@ import {
   Heart, Wallet, Star, Shield, 
   ChevronRight, RefreshCw, User, Users,
   Heart as HeartIcon, DollarSign, Sparkles, Brain, 
-  Gem, Map, Gift, Compass, Share2, Check
+  Gem, Map, Gift, Compass
 } from 'lucide-react';
-import { calculateMatrix, calculateCompatibility, calculateAge, type MatrixData, ARCANA_GUIDE, ARCANA_NAMES } from './utils/matrixUtils';
+import { calculateMatrix, calculateCompatibility, calculateAge, type MatrixData, ARCANA_GUIDE, ARCANA_NAMES, STATIC_MONTH_INTERPRETATIONS } from './utils/matrixUtils';
 
-function encodeBase64(str: string): string {
-  try {
-    return btoa(unescape(encodeURIComponent(str)));
-  } catch (e) {
-    return btoa(str);
-  }
-}
+const MONTH_NAMES_PL: Record<number, string> = {
+  1: 'Styczeń',
+  2: 'Luty',
+  3: 'Marzec',
+  4: 'Kwiecień',
+  5: 'Maj',
+  6: 'Czerwiec',
+  7: 'Lipiec',
+  8: 'Sierpień',
+  9: 'Wrzesień',
+  10: 'Październik',
+  11: 'Listopad',
+  12: 'Grudzień',
+};
 
-function decodeBase64(str: string): string {
-  try {
-    return decodeURIComponent(escape(atob(str)));
-  } catch (e) {
-    try {
-      return atob(str);
-    } catch (err) {
-      return '';
-    }
-  }
+function getMonthNamePl(dob: string): string {
+  if (!dob || dob.length < 10) return 'Nieznany miesiąc';
+  const parts = dob.split('.');
+  if (parts.length < 2) return 'Nieznany miesiąc';
+  const monthNum = parseInt(parts[1], 10);
+  return MONTH_NAMES_PL[monthNum] || 'Nieznany miesiąc';
 }
 
 export default function App() {
@@ -35,80 +38,60 @@ export default function App() {
   const [mode, setMode] = useState<'single' | 'compatibility'>('single');
   const [view, setView] = useState<'p1' | 'p2' | 'common'>('p1');
   const [result, setResult] = useState<{ m1?: MatrixData; m2?: MatrixData; common?: MatrixData }>({});
-  const [copied, setCopied] = useState(false);
+
+  const [aiInterpretations, setAiInterpretations] = useState<Record<string, string>>(() => {
+    try {
+      const cached = localStorage.getItem('matryca_ai_talents');
+      return cached ? JSON.parse(cached) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
-      const params = new URLSearchParams(window.location.search);
-      const p1Dob = params.get('p1');
-      const p2Dob = params.get('p2');
-      const n1Name = params.get('n1');
-      const n2Name = params.get('n2');
-      const urlMode = params.get('m');
-
-      if (p1Dob) {
-        const decodedDob = decodeBase64(p1Dob);
-        if (decodedDob && decodedDob.length === 10) {
-          setPerson1(prev => ({ ...prev, dob: decodedDob }));
-        }
-      }
-      if (n1Name) {
-        const decodedName = decodeBase64(n1Name);
-        if (decodedName) {
-          setPerson1(prev => ({ ...prev, name: decodedName }));
-        }
-      }
-      if (p2Dob) {
-        const decodedDob = decodeBase64(p2Dob);
-        if (decodedDob && decodedDob.length === 10) {
-          setPerson2(prev => ({ ...prev, dob: decodedDob }));
-        }
-      }
-      if (n2Name) {
-        const decodedName = decodeBase64(n2Name);
-        if (decodedName) {
-          setPerson2(prev => ({ ...prev, name: decodedName }));
-        }
-      }
-      if (urlMode === 'compatibility' || urlMode === 'single') {
-        setMode(urlMode as 'single' | 'compatibility');
-        if (urlMode === 'compatibility') {
-          setView('common');
-        }
-      }
-    } catch (err) {
-      console.error('Error parsing loaded URL parameters:', err);
+      localStorage.setItem('matryca_ai_talents', JSON.stringify(aiInterpretations));
+    } catch (e) {
+      console.error('LocalStorage caching failed:', e);
     }
-  }, []);
+  }, [aiInterpretations]);
 
-  const handleShare = () => {
+  const generateInterpretation = async (dob: string, bValue: number, bName: string) => {
+    const monthName = getMonthNamePl(dob);
+    const cacheKey = `${dob}_${bValue}`;
+    
+    setAiLoading(true);
+    setAiError(null);
+    
     try {
-      const params = new URLSearchParams();
-      if (person1.dob) {
-        params.set('p1', encodeBase64(person1.dob));
-      }
-      if (person1.name) {
-        params.set('n1', encodeBase64(person1.name));
-      }
-      if (mode === 'compatibility') {
-        params.set('m', 'compatibility');
-        if (person2.dob) {
-          params.set('p2', encodeBase64(person2.dob));
-        }
-        if (person2.name) {
-          params.set('n2', encodeBase64(person2.name));
-        }
-      } else {
-        params.set('m', 'single');
-      }
-
-      const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+      const response = await fetch('/api/interpret-talent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          monthName,
+          arcanNum: bValue,
+          arcanName: bName,
+        }),
       });
-    } catch (err) {
-      console.error('Error generating share link:', err);
+      
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Generowanie nie powiodło się.');
+      }
+      
+      const data = await response.json();
+      setAiInterpretations((prev) => ({
+        ...prev,
+        [cacheKey]: data.result,
+      }));
+    } catch (err: any) {
+      setAiError(err.message || 'Brak połączenia z doradcą AI.');
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -131,6 +114,10 @@ export default function App() {
   }, [person1.dob, person2.dob, mode]);
 
   const activeMatrix = mode === 'single' ? result.m1 : (view === 'p1' ? result.m1 : view === 'p2' ? result.m2 : result.common);
+
+  const activeDob = mode === 'single' ? person1.dob : (view === 'p1' ? person1.dob : person2.dob);
+  const activeMonthName = getMonthNamePl(activeDob);
+  const cacheKey = activeMatrix ? `${activeDob}_${activeMatrix.B}` : '';
 
   const handleDateChange = (val: string, setter: any) => {
     let cleaned = val.replace(/\D/g, '');
@@ -274,36 +261,6 @@ export default function App() {
               </motion.div>
             )}
           </div>
-
-          {/* Share Button Block */}
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 flex justify-center"
-            id="share-button-container"
-          >
-            <button
-              onClick={handleShare}
-              className={`flex items-center gap-2.5 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-sm border ${
-                copied 
-                  ? 'bg-emerald-500 text-white border-emerald-500 shadow-emerald-100' 
-                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/80 hover:border-slate-300'
-              }`}
-              id="btn-share-matrix"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 text-white animate-pulse" />
-                  <span className="text-white">Skopiowano link!</span>
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-4 h-4 text-[#a855f7]" />
-                  <span>Udostępnij matrycę</span>
-                </>
-              )}
-            </button>
-          </motion.div>
         </div>
 
         {/* Content Tabs for Compatibility View Options */}
@@ -541,10 +498,10 @@ export default function App() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id="additional-blocks-row">
                  
                  {/* Siła przodkówCard */}
-                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_8px_25px_rgba(0,0,0,0.015)] flex items-center justify-between" id="card-additional-ancestral">
+                 <div className="bg-white rounded-[2rem] p-6 border border-slate-100/80 shadow-[0_12px_30px_rgba(0,0,0,0.02)] flex items-center justify-between transition-all duration-300 hover:shadow-[0_15px_35px_rgba(0,0,0,0.035)]" id="card-additional-ancestral">
                     <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
-                          <Compass className="w-5 h-5" />
+                       <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-orange-500/10 to-amber-500/10 border border-orange-100/30 flex items-center justify-center text-orange-500 shrink-0 shadow-[0_4px_12px_rgba(249,115,22,0.06)]">
+                          <Compass className="w-5.5 h-5.5 animate-spin-slow text-orange-500" />
                        </div>
                        <div className="text-left">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">SIŁA PRZODKÓW</p>
@@ -557,10 +514,10 @@ export default function App() {
                  </div>
 
                  {/* Wewnętrzny kod siły Card */}
-                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-[0_8px_25px_rgba(0,0,0,0.015)] flex items-center justify-between" id="card-additional-powercode">
+                 <div className="bg-white rounded-[2rem] p-6 border border-slate-100/80 shadow-[0_12px_30px_rgba(0,0,0,0.02)] flex items-center justify-between transition-all duration-300 hover:shadow-[0_15px_35px_rgba(0,0,0,0.035)]" id="card-additional-powercode">
                     <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-[#a855f7] shrink-0">
-                          <Zap className="w-5 h-5" />
+                       <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-500/10 to-indigo-500/10 border border-purple-100/30 flex items-center justify-center text-purple-600 shrink-0 shadow-[0_4px_12px_rgba(168,85,247,0.06)]">
+                          <Zap className="w-5.5 h-5.5 animate-pulse" />
                        </div>
                        <div className="text-left">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">WEWNĘTRZNY KOD SIŁY</p>
@@ -584,22 +541,60 @@ export default function App() {
                              : String(activeMatrix.E + activeMatrix.internalPower).split('').reduce((a,b)=>a+Number(b),0)
                            : activeMatrix.E + activeMatrix.internalPower}
                        </span>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Interpretation Blocks (Darmic/Life Guides) */}
+              {view !== 'common' && activeMatrix && (
+                <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-[0_12px_40px_rgba(0,0,0,0.02)] mt-10" id="month-talent-interpretation-container">
+                    <div className="bg-gradient-to-br from-purple-50/50 via-indigo-50/30 to-slate-50/20 rounded-2xl p-6 md:p-8 border border-purple-100/40 relative overflow-hidden text-left">
+                      {/* background glow effect */}
+                      <div className="absolute right-0 top-0 w-48 h-48 bg-purple-200/20 rounded-full blur-3xl pointer-events-none" />
+                      
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-500/15 to-indigo-500/15 border border-purple-200/20 flex items-center justify-center text-purple-600 shadow-[0_4px_12px_rgba(168,85,247,0.04)]">
+                            <Sparkles className="w-5.5 h-5.5 text-purple-500 animate-pulse" />
+                          </div>
+                          <div>
+                            <span className="text-lg font-black tracking-tight text-slate-800 uppercase font-sans">
+                              GŁÓWNY TALENT DUSZY
+                            </span>
+                            <p className="text-[10px] text-slate-400 font-bold tracking-wider leading-none mt-1">INDYWIDUALNA KARTA PRZEZNACZENIA</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-purple-100/30 shadow-sm shrink-0 self-start sm:self-center">
+                          <span className="text-2xl font-black text-purple-600 font-mono tracking-tighter">
+                            {activeMatrix.B}
+                          </span>
+                          <div className="text-left">
+                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Miesiąc: {activeMonthName}</p>
+                            <p className="text-[11px] font-black text-slate-700 leading-none mt-0.5">
+                              {ARCANA_NAMES[activeMatrix.B] || ''}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="relative z-10">
+                        <div className="text-slate-600 text-xs md:text-sm leading-relaxed max-w-3xl bg-white/75 backdrop-blur-sm p-6 rounded-2xl border border-white/80 shadow-[0_4px_15px_rgba(0,0,0,0.01)] text-left">
+                          {STATIC_MONTH_INTERPRETATIONS[activeMatrix.B] ? (
+                            STATIC_MONTH_INTERPRETATIONS[activeMatrix.B].split('\n\n').map((paragraph: string, idx: number) => (
+                              <p key={idx} className="font-medium text-slate-700 mb-4 last:mb-0 leading-relaxed text-justify">
+                                {paragraph}
+                              </p>
+                            ))
+                          ) : (
+                            <p className="font-medium text-slate-500">
+                              Brak dostępnej interpretacji dla energii {activeMatrix.B}.
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                  </div>
-              </div>
-
-              {/* Interpretation Blocks (Darmic/Life Guides) */}
-              {view !== 'common' && (
-                <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-[0_12px_40px_rgba(0,0,0,0.02)] mt-10" id="insights-section">
-                   <h3 className="text-sm font-black text-slate-800 tracking-wider mb-6 flex items-center gap-2">
-                     <ScrollText className="w-4 h-4 text-[#a855f7]" /> INTERPRETACJA KLUCZOWYCH ENERGII
-                   </h3>
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <InsightItem label="Twój Charakter (Centrum)" val={activeMatrix.E} />
-                      <InsightItem label="Twoja Wyższa Jaźń (Duch)" val={activeMatrix.B} />
-                      <InsightItem label="Przeznaczenie Karmiczne" val={activeMatrix.D} />
-                   </div>
-                </div>
               )}
             </motion.div>
           )}

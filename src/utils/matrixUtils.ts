@@ -295,6 +295,45 @@ export const ARCANA_NAMES: Record<number, string> = {
   22: 'Głupiec',
 };
 
+export const STATIC_MONTH_INTERPRETATIONS: Record<number, string> = {
+  1: `Twoja siła płynie z unikalnych pomysłów i genialnej zdolności przekuwania myśli w rzeczywistość. Masz w sobie iskrę, która pozwala Ci rozpoczynać nowe projekty bez wysiłku. Twój umysł stale generuje innowacje, a własna przestrzeń twórcza i zapoczątkowywanie zmian idealnie ładują Twoje wewnętrzne baterie.
+
+W codziennym życiu wyznaczaj kierunek innym, pokazując, że niemożliwe nie istnieje. Możesz zainspirować kogoś do startu własnej firmy lub po prostu podsunąć proste rozwiązanie trudnego problemu. Twoje słowa mają moc twórczą, używaj ich więc ze zrozumieniem, by wnosić w świat nową jakość i budować mosty.`,
+  2: `Twoim przedziwnym darem jest niebywała intuicja i zdolność dostrzegania tego, co niewidoczne na pierwszy rzut oka. Naturalnie wyczuwasz nastroje innych ludzi i zaprowadzasz harmonię tam, gdzie panuje chaos. Ładujesz swoje akumulatory, kiedy przebywasz na łonie natury, w ciszy, słuchając swojego wewnętrznego głosu.
+
+Wykorzystuj ten talent, działając jako naturalny dyplomata i doradca. Potrafisz wysłuchać przyjaciela bez oceniania i pomóc mu odnaleźć spokój w trudnej sytuacji. Twój dyplomatyczny dar sprawia, że ludzie czują się przy Tobie bezpieczni, a świat zyskuje dzięki Tobie więcej serdeczności i autentycznego zrozumienia.`,
+  3: `Twoją istotą jest obfitość, gościnność i naturalna zdolność do opiekowania się wszystkim, co wokół Ciebie rośnie. Masz talent do tworzenia piękna i przytulnej atmosfery bez najmniejszego wysiłku. Baterie ładujesz poprzez troskę o dom, pielęgnowanie relacji z bliskimi oraz otaczanie się estetyką i komfortem.
+
+Wnosić obfitość w codzienność możesz poprzez wspieranie innych w ich rozwoju, a także rozwijanie własnych pomysłów biznesowych lub artystycznych. Twoja obecność sprawia, że projekty i relacje rozkwitają. Bądź ostoją ciepła, twórz piękno i ciesz się każdą chwilą, bo Twoja troska czyni ten świat lepszym i bogatszym.`,
+  4: `Twoja główna siła tkwi w stabilności, odpowiedzialności i niesamowitym talencie do organizowania chaosu w uporządkowane struktury. Masz w sobie naturalny autorytet, który zjednuje ludzi, a poczucie kontroli i jasno wyznaczone cele dają Ci potężny zastrzyk energii. Ładujesz się, kiedy tworzysz solidny plan.
+
+Wykorzystaj ten talent, stając się liderem, na którym inni mogą polegać w trudnych chwilach. Może to być kierowanie zespołem w pracy lub zorganizowanie pomocy dla sąsiada. Twoje zdecydowanie i troska o porządek dają ludziom poczucie bezpieczeństwa. Buduj mądrze i z sercem, bo Twoja stabilna energia jest ostoją dla wielu.`,
+  5: `Twoja wewnętrzna esencja opiera się na szacunku do tradycji, zasad i ciągłym dążeniu do wiedzy. Twoim naturalnym talentem jest umiejętność jasnego przekazywania mądrości i tłumaczenia skomplikowanych rzeczy w prosty sposób. Zgłębianie nowych dziedzin i dzielenie się wnioskami niesamowicie ładuje Twoje życiowe baterie.
+
+Na co dzień sprawdzasz się jako wspaniały mentor, nauczyciel i przyjaciel, który zawsze służy dobrą radą. Budujesz relacje oparte na zaufaniu i wartościach duchowych, pomogając innym odnaleźć ich własną ścieżkę. Twoja wiedza porządkuje świat i wnosi w niego jasność – nieś to światło dalej z radością.`,
+  6: `Twoją główną siłą jest zdolność budowania głębokich, pięknych relacji oraz naturalne dążenie do harmonii i estetyki. Rozpalasz się od środka, gdy tworzysz atmosferę miłości i akceptacji wokół siebie. Ładujesz swoje akumulatory poprzez spotkania z bliskimi, obcowanie ze sztuką oraz dbanie o przyjazne i stylowe otoczenie.
+
+Wykorzystaj ten dar, łącząc ludzi i pomagając im dostrzegać piękno w codzienności. Możesz zaaranżować udane spotkanie towarzyskie lub pomóc komuś podjąć decyzję płynącą prosto z serca. Twoja serdeczność i otwartość sprawiają, że świat staje się cieplejszy, a ludzie wokół Ciebie czują się naprawdę ważni i docenieni.`,
+  7: `Twoją wewnętrzną esencją jest ruch, determinacja i talent do osiągania wyznaczonych celów z niezwykłą odwagą. Masz w sobie iskrę zwycięzcy, która pcha Cię do przodu bez względu na przeszkody. Planowanie podróży, aktywność fizyczna oraz stawianie sobie nowych wyzwań błyskawicznie ładują Twoje wewnętrzne baterie.
+
+W codziennym życiu inspiruj innych do działania, pokazując, jak przekuwać marzenia w rzeczywiste plany. Możesz poprowadzić wspólny projekt lub pomóc znajomemu ruszyć z miejsca, w którym utknął. Twoja dynamiczna i pozytywna siła zaraża entuzjazmem. Trzymaj mocno stery swojego życia i prowadź innych ku wspólnemu sukcesowi.`,
+  8: `Twoja siła tkwi w głębokim zrozumieniu praw rządzących życiem oraz naturalnym talencie do zachowania obiektywizmu i równowagi. Potrafisz bez emocji ocenić każdą sytuację i dostrzec ukryte powiązania. Ładujesz swoje akumulatory, gdy panuje wokół Ciebie jasność, prawda i poczucie sprawiedliwości.
+
+Na co dzień wykorzystuj ten dar do godzenia zwaśnionych stron i wprowadzania porządku tam, gdzie panuje chaos informacyjny. Pomagaj ludziom dostrzec obiektywną prawdę i spokojnie rozwiązywać spory. Twoja mądrość i uczciwość budują zaufanie, a Twoje słowo ma wielką wagę. Bądź filarem sprawiedliwości dla swojego otoczenia.`,
+  9: `Twoim najcenniejszym darem jest głęboka mądrość, samowystarczalność i badawczy umysł, który potrafi dotrzeć do sedna każdej sprawy. Masz w sobie naturalny spokój, który przyciąga ludzi szukających odpowiedzi. Ładujesz baterie w chwilach samotności, podczas lektury, refleksji lub spokojnych spacerów w ciszy.
+
+Swoją mądrość możesz nieść światu, dzieląc się przemyśleniami z tymi, którzy naprawdę tego potrzebują. Bądź dla innych oazą spokoju i cierpliwym doradcą, który pomaga dostrzec głębszy sens w codziennym biegu. Twoje refleksyjne podejście wnosi do relacji niesamowitą głębię. Dziel się swoim światłem bez pośpiechu.`,
+  10: `Twoja siła polega na niesamowitym zaufaniu do życia, lekkości i umiejętności płynięcia z prądem korzystnych okoliczności. Masz talent do przyciągania szczęśliwych zbiegów okoliczności i uśmiechu losu. Twoje baterie najlepiej ładują się wtedy, gdy odpuszczasz nadmierną kontrolę i pozwalasz rzeczom dziać się naturalnie.
+
+Wykorzystaj ten dar, ucząc innych optymizmu i elastycznego podejścia do zmian. Pokazuj ludziom wokół, że nawet niespodziewane trudności mogą przynieść nowe, wspaniałe możliwości działania. Twoja pozytywna energia wnosi lekkość w każde przedsięwzięcie. Ciesz się chwilą i zarażaj innych wiarą w szczęśliwy los.`,
+  11: `Twoim głównym talentem jest ogromna siła witalna, pasja oraz niezwykła pojemność energetyczna, która pozwala Ci góry przenosić. To, co dla innych jest wyczerpujące, dla Ciebie bywa naturalnym rytmem działania. Twoje baterie ładują się poprzez aktywny wypoczynek, realizowanie wielkich zamierzeń oraz kreatywną pracę.
+
+Używaj tej potężnej energii do wspierania słabszych i motywowania ludzi do przekraczania własnych granic. Swoim entuzjazmem możesz natchnąć zespół do wielkich osiągnięć lub podtrzymać kogoś na duchu w trudnym momencie. Twoja obecność emanuje pewnością siebie i witalnością, która rozświetla i wzmacnia świat wokół.`,
+  12: `Twój unikalny talent to nieszablonowe myślenie, głęboka empatia i zdolność patrzenia na świat z zupełnie innej perspektywy niż większość ludzi. Potrafisz dostrzec rewolucyjne rozwiązania tam, gdzie inni widzą ścianę. Ładujesz akumulatory, pomagając bezinteresownie i angażując się w projekty, które przynoszą realną wartość.
+
+W codziennym życiu wyciągaj pomocną dłoń i pokazuj bliskim nowatorskie drogi wyjścia z kłopotów. Twoja otwartość na drugiego człowieka sprawia, że ludzie czują się przy Tobie w pełni zaakceptowani. Twórz kreatywne idee i wnoś do relacji miękkość oraz zrozumienie. Twoje współczucie czyni świat cieplejszym miejscem.`,
+};
+
 export interface ArcanaGuide {
   keywords: string;
   advice: string;

@@ -5,9 +5,9 @@ import {
   Heart, Wallet, Star, Shield, 
   ChevronRight, RefreshCw, User, Users,
   Heart as HeartIcon, DollarSign, Sparkles, Brain, 
-  Gem, Map, Gift, Compass
+  Gem, Map, Gift, Compass, Instagram, Facebook, Youtube
 } from 'lucide-react';
-import { calculateMatrix, calculateCompatibility, calculateAge, type MatrixData, ARCANA_GUIDE, ARCANA_NAMES, STATIC_MONTH_INTERPRETATIONS } from './utils/matrixUtils';
+import { calculateMatrix, calculateCompatibility, calculateAge, reduceTo22, type MatrixData, ARCANA_GUIDE, ARCANA_NAMES, STATIC_MONTH_INTERPRETATIONS, STATIC_RELATIONSHIP_INTERPRETATIONS } from './utils/matrixUtils';
 
 const MONTH_NAMES_PL: Record<number, string> = {
   1: 'Styczeń',
@@ -33,8 +33,8 @@ function getMonthNamePl(dob: string): string {
 }
 
 export default function App() {
-  const [person1, setPerson1] = useState({ dob: '19.01.1994', name: '' });
-  const [person2, setPerson2] = useState({ dob: '15.05.1995', name: '' });
+  const [person1, setPerson1] = useState({ dob: '', name: '' });
+  const [person2, setPerson2] = useState({ dob: '', name: '' });
   const [mode, setMode] = useState<'single' | 'compatibility'>('single');
   const [view, setView] = useState<'p1' | 'p2' | 'common'>('p1');
   const [result, setResult] = useState<{ m1?: MatrixData; m2?: MatrixData; common?: MatrixData }>({});
@@ -50,6 +50,17 @@ export default function App() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
+  const [relInterpretations, setRelInterpretations] = useState<Record<string, string>>(() => {
+    try {
+      const cached = localStorage.getItem('matryca_ai_relationship');
+      return cached ? JSON.parse(cached) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [relLoading, setRelLoading] = useState(false);
+  const [relError, setRelError] = useState<string | null>(null);
+
   useEffect(() => {
     try {
       localStorage.setItem('matryca_ai_talents', JSON.stringify(aiInterpretations));
@@ -57,6 +68,14 @@ export default function App() {
       console.error('LocalStorage caching failed:', e);
     }
   }, [aiInterpretations]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('matryca_ai_relationship', JSON.stringify(relInterpretations));
+    } catch (e) {
+      console.error('LocalStorage caching failed for relationship:', e);
+    }
+  }, [relInterpretations]);
 
   const generateInterpretation = async (dob: string, bValue: number, bName: string) => {
     const monthName = getMonthNamePl(dob);
@@ -95,6 +114,38 @@ export default function App() {
     }
   };
 
+  const generateRelationshipInterpretation = async (arcanNum: number, arcanName: string, cacheKey: string) => {
+    setRelLoading(true);
+    setRelError(null);
+    try {
+      const response = await fetch('/api/interpret-relationship', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          arcanNum,
+          arcanName,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Generowanie analizy nie powiodło się.');
+      }
+      
+      const data = await response.json();
+      setRelInterpretations((prev) => ({
+        ...prev,
+        [cacheKey]: data.result,
+      }));
+    } catch (err: any) {
+      setRelError(err.message || 'Brak połączenia z ekspertem relacji AI.');
+    } finally {
+      setRelLoading(false);
+    }
+  };
+
   const age1 = calculateAge(person1.dob);
   const age2 = calculateAge(person2.dob);
 
@@ -112,6 +163,8 @@ export default function App() {
   useEffect(() => {
     calculate();
   }, [person1.dob, person2.dob, mode]);
+
+
 
   const activeMatrix = mode === 'single' ? result.m1 : (view === 'p1' ? result.m1 : view === 'p2' ? result.m2 : result.common);
 
@@ -156,9 +209,8 @@ export default function App() {
              </div>
              <div>
                 <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-800 uppercase font-sans">
-                  MATRYCA <span className="text-[#a855f7]">LOSU</span>
+                  Kalkulator <span className="text-[#a855f7]">Matrycy Losu</span>
                 </h1>
-                <p className="text-[10px] font-bold text-slate-400 tracking-[0.34em] uppercase mt-1">SYSTEM SAMOPOZNANIA</p>
              </div>
           </motion.div>
 
@@ -176,7 +228,7 @@ export default function App() {
               className={`relative z-10 px-8 py-3 rounded-full text-[11px] font-bold tracking-widest transition-all ${mode === 'compatibility' ? 'bg-[#1e293b] text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
               id="btn-compatibility"
             >
-              KOMPATYBILNOŚĆ
+              ZGODNOŚĆ
             </button>
           </div>
 
@@ -185,9 +237,11 @@ export default function App() {
             {/* Person 1 Input */}
             <div className="flex-1 min-w-[280px]">
               <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)]">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">
-                    {mode === 'compatibility' ? 'OSOBA 1' : 'DANE ANALIZYWANE'}
-                  </p>
+                  {mode === 'compatibility' && (
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">
+                      OSOBA 1
+                    </p>
+                  )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100/50">
                         <User className="w-4 h-4 text-slate-400" />
@@ -209,7 +263,7 @@ export default function App() {
                           <input 
                              value={person1.dob}
                              onChange={(e) => handleDateChange(e.target.value, setPerson1)}
-                             placeholder="19.01.1994"
+                             placeholder="DD.MM.RRRR"
                              className="bg-transparent border-none focus:ring-0 font-black text-base text-slate-800 w-full p-0 leading-tight focus:outline-none"
                              id="input-dob-1"
                           />
@@ -250,7 +304,7 @@ export default function App() {
                             <input 
                                value={person2.dob}
                                onChange={(e) => handleDateChange(e.target.value, setPerson2)}
-                               placeholder="DD.MM.YYYY"
+                               placeholder="DD.MM.RRRR"
                                className="bg-transparent border-none focus:ring-0 font-black text-base text-slate-800 w-full p-0 leading-tight focus:outline-none"
                                id="input-dob-2"
                             />
@@ -268,7 +322,7 @@ export default function App() {
           <div className="flex justify-center mb-8 gap-2 px-4" id="compatibility-subtabs">
             {[
               { id: 'p1', label: person1.name || 'Osoba 1' },
-              { id: 'common', label: 'KOMPATYBILNOŚĆ (Pary)' },
+              { id: 'common', label: 'ZGODNOŚĆ' },
               { id: 'p2', label: person2.name || 'Osoba 2' }
             ].map((tab) => (
               <button
@@ -341,36 +395,42 @@ export default function App() {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-gradient-to-br from-[#1e293b] to-[#111827] text-white rounded-[2rem] p-8 shadow-xl"
+                  className="bg-white border-2 border-[#d4af37] text-stone-800 shadow-[0_20px_60px_rgba(212,175,55,0.06)] rounded-[2rem] p-8 flex flex-col justify-between"
                   id="compatibility-info-card"
                 >
-                  <h2 className="text-sm font-black text-[#fbcfe8] uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <Compass className="w-4 h-4 text-[#ec4899]" /> ANALIZA ZWIĄZKU
-                  </h2>
-                  <p className="text-xs text-slate-300 leading-relaxed mb-6">
-                    Ten widok prezentuje połączone energie obojga partnerów wyliczone według tradycyjnego systemu Matrycy Przeznaczenia. 
-                    Sumaryczny punkt komfortu, karmy rodowej oraz linie męskie/żeńskie obrazują synergię Waszej relacji.
-                  </p>
-                  
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Wspólna Karma Rodowa</p>
-                        <p className="text-xs text-slate-200 mt-0.5">Łączna siła i lekcje obojga</p>
-                      </div>
-                      <span className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 font-extrabold flex items-center justify-center border border-purple-500/30 font-mono text-sm">
-                        {activeMatrix.ancestralStrength}
+                  <div>
+                    <h2 className="text-xs font-black text-amber-950 uppercase tracking-widest mb-6 flex items-center gap-2">
+                      <Compass className="w-4 h-4 text-amber-700" /> ANALIZA ZWIĄZKU
+                    </h2>
+                    
+                    {/* Archetype Indicator Badge */}
+                    <div className="flex items-center gap-3 bg-amber-500/5 border border-[#d4af37]/30 p-3 rounded-2xl mb-6 shadow-sm">
+                      <span className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-950 font-black flex items-center justify-center border border-[#d4af37]/50 font-mono text-lg shrink-0">
+                        {activeMatrix.A}
                       </span>
+                      <div className="text-left">
+                        <p className="text-[8px] font-bold text-amber-900/60 uppercase tracking-widest">Archetyp inicjujący relację</p>
+                        <p className="text-xs font-black text-amber-950 leading-tight mt-0.5">
+                          {ARCANA_NAMES[activeMatrix.A] || ''}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">Wewnętrzna Energia Pary</p>
-                        <p className="text-xs text-slate-200 mt-0.5">Wzajemne przeznaczenie podświadome</p>
-                      </div>
-                      <span className="w-10 h-10 rounded-xl bg-pink-500/20 text-pink-300 font-extrabold flex items-center justify-center border border-pink-500/30 font-mono text-sm font-mono">
-                        {activeMatrix.E}
-                      </span>
+                    {/* Interpretation Text Flow */}
+                    <div className="relative min-h-[140px] text-justify">
+                      {STATIC_RELATIONSHIP_INTERPRETATIONS[activeMatrix.A] ? (
+                        <div className="text-xs text-stone-850 leading-relaxed transition-opacity duration-300">
+                          {STATIC_RELATIONSHIP_INTERPRETATIONS[activeMatrix.A].split('\n').filter(p => p.trim().length > 0).map((paragraph, idx) => (
+                            <p key={idx} className="mb-4 last:mb-0 leading-relaxed text-justify text-[12px] font-medium text-stone-800">
+                              {paragraph}
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-stone-500 italic text-center py-6">
+                          Materiały dla tego archetypu są chwilowo niedostępne.
+                        </div>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -395,7 +455,7 @@ export default function App() {
                   <div className="w-full border-t border-slate-200" />
                 </div>
                 <div className="relative bg-[#f1f5f9] px-6 text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase">
-                  WIEK & DETALE ETAPÓW
+                  WIEK & KODY MOCY & PRZEZNACZENIA
                 </div>
               </div>
 
@@ -412,13 +472,15 @@ export default function App() {
               </div>
 
               {/* The Four Cards (Znalezienie siebie, Socjalizacja, Przeznaczenie duchowe, Korzyść) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="fate-cards-grid">
+              <div className={`grid grid-cols-1 sm:grid-cols-2 ${view === 'common' ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-6`} id="fate-cards-grid">
                 
                 {/* Card 1: Znalezienie siebie */}
                 <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] flex flex-col justify-between" id="card-stage-1">
                    <div>
                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">1 pr-e</p>
-                     <p className="text-sm font-black text-slate-800 uppercase mt-0.5">ZNALEZIENIE SIEBIE</p>
+                     <p className="text-sm font-black text-slate-800 uppercase mt-0.5">
+                       {view === 'common' ? 'FUNDAMENT RELACJI' : 'ZNALEZIENIE SIEBIE'}
+                     </p>
                      
                      <div className="mt-4 flex gap-4 text-[11px] text-slate-450 border-t border-slate-50 pt-3">
                         <div>
@@ -428,6 +490,12 @@ export default function App() {
                           <span className="font-bold text-slate-400">Ziemia:</span> <span className="font-black text-slate-750">{activeMatrix.earth}</span>
                         </div>
                      </div>
+
+                     {view === 'common' && (
+                        <p className="text-xs text-slate-500 mt-4 leading-relaxed text-justify border-t border-slate-100 pt-3 font-medium">
+                          To fundament, na którym opierają się wasze uczucia i codzienność. Tutaj dochodzi do subtelnego nastrojenia dwóch światów: Niebo (strefa duchowa) odpowiada za wspólne wartości, więź emocjonalną i to, jak partnerzy wyczuwają siebie nawzajem, a Ziemia (strefa materialna) – za to, jak układa się wspólne życie, jak rozwiązywane są kwestie codzienne i jak uziemiane są uczucia.
+                        </p>
+                     )}
                    </div>
                    
                    <div className="flex justify-end mt-6">
@@ -441,7 +509,9 @@ export default function App() {
                 <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] flex flex-col justify-between" id="card-stage-2">
                    <div>
                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">2 pr-e</p>
-                     <p className="text-sm font-black text-slate-800 uppercase mt-0.5">SOCJALIZACJA</p>
+                     <p className="text-sm font-black text-slate-800 uppercase mt-0.5">
+                       {view === 'common' ? 'PRODUKTYWNOŚĆ PARY I POSZERZANIE OBFITOŚCI' : 'SOCJALIZACJA'}
+                     </p>
                      
                      <div className="mt-4 flex gap-4 text-[11px] text-slate-450 border-t border-slate-50 pt-3">
                         <div>
@@ -451,6 +521,26 @@ export default function App() {
                           <span className="font-bold text-slate-400">Żeńska:</span> <span className="font-black text-slate-750">{activeMatrix.female}</span>
                         </div>
                      </div>
+
+                     {view === 'common' && (
+                        <div className="text-xs text-slate-500 mt-4 space-y-3 text-justify border-t border-slate-100 pt-3">
+                           <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/60">
+                             <span className="font-black text-slate-700 uppercase text-[9px] tracking-wider block mb-0.5">Mężczyzna</span>
+                             <p className="leading-relaxed text-slate-500 font-medium">
+                               Kumuluje w sobie wszystkie zadania, siłę i ukryte talenty mężczyzny, które odkrywa on i wnosi do tego związku.
+                             </p>
+                           </div>
+                           <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/60">
+                             <span className="font-black text-slate-700 uppercase text-[9px] tracking-wider block mb-0.5">Kobieta</span>
+                             <p className="leading-relaxed text-slate-500 font-medium">
+                               Uosabia mądrość, talenty i zadania kobiety, którymi karmi ona ten sojusz.
+                             </p>
+                           </div>
+                           <p className="leading-relaxed border-t border-slate-100 pt-3 italic text-slate-450 font-medium">
+                             Kiedy te energie łączą się prawidłowo, nie tylko się sumują, ale wręcz mnożą. Ma to bezpośredni wpływ na to, jak partnerzy przejawiają się względem siebie (inspirują, wspierają, dzielą się zasobami) oraz jak funkcjonują w społeczeństwie. Poprzez uznanie pary przez otoczenie uruchawia się proces poszerzania obfitości – zarówno tej materialnej (dochód, projekty, status), jak i duchowej.
+                           </p>
+                        </div>
+                     )}
                    </div>
                    
                    <div className="flex justify-end mt-6">
@@ -464,8 +554,17 @@ export default function App() {
                 <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] flex flex-col justify-between" id="card-stage-3">
                    <div>
                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">3 pr-e</p>
-                     <p className="text-sm font-black text-slate-800 uppercase mt-0.5 leading-tight">PRZEZNACZENIE DUCHOWE</p>
-                     <p className="text-[10px] text-slate-400 mt-2 italic">Podsumowująca wibracja sfery ducha</p>
+                     <p className="text-sm font-black text-slate-800 uppercase mt-0.5 leading-tight">
+                       {view === 'common' ? 'WYŻSZY SENS ZWIĄZKU' : 'PRZEZNACZENIE DUCHOWE'}
+                     </p>
+                     
+                     {view !== 'common' ? (
+                       <p className="text-[10px] text-slate-400 mt-2 italic">Podsumowująca wibracja sfery ducha</p>
+                     ) : (
+                       <p className="text-xs text-slate-500 mt-4 leading-relaxed text-justify border-t border-slate-100 pt-3 font-medium">
+                         Pokazuje sakralny punkt ewolucji związku, do którego partnerzy zbliżają się każdego dnia – pokonując kryzysy, ciesząc się sukcesami i transformując egoizm we współtworzenie. To to głębokie, bezwarunkowe duchowe zrozumienie, do którego partnerzy mają dojść poprzez tę relację.
+                       </p>
+                     )}
                    </div>
                    
                    <div className="flex justify-end mt-6">
@@ -475,15 +574,19 @@ export default function App() {
                    </div>
                 </div>
 
-                {/* Card 4: Korzyść (black styled block exactly as requested) */}
+                {/* Card 4: planetarne */}
+                {view !== 'common' && (
                 <div className="bg-[#1e293b] text-white rounded-[2rem] p-6 shadow-lg flex flex-col justify-between relative overflow-hidden" id="card-stage-korzysc">
                    {/* Background circular highlight to pop visually */}
                    <div className="absolute top-[-20%] right-[-10%] w-20 h-20 bg-purple-500/10 rounded-full blur-xl" />
                    
                    <div>
                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">4 pr-e</p>
-                     <p className="text-sm font-black text-[#faf5ff] uppercase mt-0.5 leading-tight">KORZYŚĆ</p>
-                     <p className="text-[10px] text-slate-300 mt-2 italic">Ostateczny dar przeznaczenia</p>
+                     <p className="text-sm font-black text-[#faf5ff] uppercase mt-0.5 leading-tight">planetarne</p>
+                     <p className="text-[10px] text-slate-300 mt-2 leading-relaxed">
+                       Wskazuje, jakich zasad należy przestrzegać, zwracając się do dużej liczby ludzi.
+                       Pokazuje, poprzez jaką energię człowiek może wpływać na dużą liczbę osób w skali swojego zespołu pracowniczego, organizacji, w której pracuje, a nawet kraju, w którym żyje.
+                     </p>
                    </div>
                    
                    <div className="flex justify-end mt-6 relative z-10">
@@ -492,19 +595,47 @@ export default function App() {
                       </div>
                    </div>
                 </div>
+                )}
               </div>
 
               {/* Minimalist Cards for Ancestral strength and Power code display */}
+              {view !== 'common' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id="additional-blocks-row">
                  
                  {/* Siła przodkówCard */}
                  <div className="bg-white rounded-[2rem] p-6 border border-slate-100/80 shadow-[0_12px_30px_rgba(0,0,0,0.02)] flex items-center justify-between transition-all duration-300 hover:shadow-[0_15px_35px_rgba(0,0,0,0.035)]" id="card-additional-ancestral">
                     <div className="flex items-center gap-4">
-                       <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-orange-500/10 to-amber-500/10 border border-orange-100/30 flex items-center justify-center text-orange-500 shrink-0 shadow-[0_4px_12px_rgba(249,115,22,0.06)]">
-                          <Compass className="w-5.5 h-5.5 animate-spin-slow text-orange-500" />
+                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400/15 via-yellow-400/10 to-amber-500/15 border border-amber-200/30 flex items-center justify-center text-amber-500 shrink-0 shadow-[0_4px_12px_rgba(245,158,11,0.08)] overflow-hidden">
+                          <motion.svg width="38" height="38" viewBox="0 0 40 40" fill="none" className="text-amber-500">
+                             <motion.g 
+                               animate={{ rotate: 360 }} 
+                               transition={{ repeat: Infinity, duration: 25, ease: "linear" }} 
+                               style={{ transformOrigin: '20px 20px' }}
+                             >
+                                {/* Seme życia (Seed of Life) with 7 interlocking circles */}
+                                <circle cx="20" cy="20" r="7.5" stroke="currentColor" strokeWidth="0.8" />
+                                <circle cx="20" cy="12.5" r="7.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.9" />
+                                <circle cx="26.49" cy="16.25" r="7.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.9" />
+                                <circle cx="26.49" cy="23.75" r="7.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.9" />
+                                <circle cx="20" cy="27.5" r="7.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.9" />
+                                <circle cx="13.51" cy="23.75" r="7.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.9" />
+                                <circle cx="13.51" cy="16.25" r="7.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.9" />
+                                
+                                {/* Outer boundary rings */}
+                                <circle cx="20" cy="20" r="15" stroke="currentColor" strokeWidth="0.5" strokeOpacity="0.5" />
+                                <circle cx="20" cy="20" r="15.6" stroke="currentColor" strokeWidth="0.3" strokeOpacity="0.3" />
+                                
+                                <motion.circle 
+                                  cx="20" cy="20" r="1.5" 
+                                  fill="currentColor" 
+                                  animate={{ scale: [0.8, 1.3, 0.8] }} 
+                                  transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }} 
+                                />
+                             </motion.g>
+                          </motion.svg>
                        </div>
                        <div className="text-left">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">SIŁA PRZODKÓW</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Moc przodków</p>
                           <p className="text-xs text-slate-400 mt-0.5">Potencjał rodów męskich i żeńskich</p>
                        </div>
                     </div>
@@ -516,11 +647,36 @@ export default function App() {
                  {/* Wewnętrzny kod siły Card */}
                  <div className="bg-white rounded-[2rem] p-6 border border-slate-100/80 shadow-[0_12px_30px_rgba(0,0,0,0.02)] flex items-center justify-between transition-all duration-300 hover:shadow-[0_15px_35px_rgba(0,0,0,0.035)]" id="card-additional-powercode">
                     <div className="flex items-center gap-4">
-                       <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-500/10 to-indigo-500/10 border border-purple-100/30 flex items-center justify-center text-purple-600 shrink-0 shadow-[0_4px_12px_rgba(168,85,247,0.06)]">
-                          <Zap className="w-5.5 h-5.5 animate-pulse" />
+                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400/15 via-yellow-400/10 to-amber-500/15 border border-amber-200/30 flex items-center justify-center text-amber-500 shrink-0 shadow-[0_4px_12px_rgba(245,158,11,0.08)] overflow-hidden">
+                          <motion.svg width="38" height="38" viewBox="0 0 40 40" fill="none" className="text-amber-500">
+                             <motion.g 
+                               animate={{ rotate: -360 }} 
+                               transition={{ repeat: Infinity, duration: 30, ease: "linear" }} 
+                               style={{ transformOrigin: '20px 20px' }}
+                             >
+                                {/* Zarodek życia (Germ / Egg of Life) multi-overlapping cell system */}
+                                <circle cx="20" cy="20" r="5.5" stroke="currentColor" strokeWidth="0.8" />
+                                <circle cx="20" cy="14.5" r="5.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.85" />
+                                <circle cx="24.76" cy="17.25" r="5.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.85" />
+                                <circle cx="24.76" cy="22.75" r="5.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.85" />
+                                <circle cx="20" cy="25.5" r="5.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.85" />
+                                <circle cx="15.24" cy="22.75" r="5.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.85" />
+                                <circle cx="15.24" cy="17.25" r="5.5" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.85" />
+                                
+                                {/* Outer containment and balance lines */}
+                                <circle cx="20" cy="20" r="11" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1.5 2" strokeOpacity="0.5" />
+                                <circle cx="20" cy="20" r="15" stroke="currentColor" strokeWidth="0.3" strokeDasharray="4 2" strokeOpacity="0.3" />
+                                <motion.circle 
+                                  cx="20" cy="20" r="1.8" 
+                                  fill="currentColor" 
+                                  animate={{ scale: [0.8, 1.35, 0.8], opacity: [0.8, 1, 0.8] }} 
+                                  transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }} 
+                                />
+                             </motion.g>
+                          </motion.svg>
                        </div>
                        <div className="text-left">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">WEWNĘTRZNY KOD SIŁY</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Wewnętrzny kod mocy</p>
                           <p className="text-xs text-slate-400 mt-0.5">Twoje unikalne spektrum mocy</p>
                        </div>
                     </div>
@@ -535,38 +691,83 @@ export default function App() {
                        </span>
                        <span className="text-[10px] font-bold text-slate-350">•</span>
                        <span className="text-sm font-black text-amber-750 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100">
-                         {activeMatrix.E + activeMatrix.internalPower > 22 
-                           ? String(activeMatrix.E + activeMatrix.internalPower).split('').reduce((a,b)=>a+Number(b),0) > 22
-                             ? (String(activeMatrix.E + activeMatrix.internalPower).split('').reduce((a,b)=>a+Number(b),0) - 22)
-                             : String(activeMatrix.E + activeMatrix.internalPower).split('').reduce((a,b)=>a+Number(b),0)
-                           : activeMatrix.E + activeMatrix.internalPower}
+                         {reduceTo22(activeMatrix.E + activeMatrix.internalPower)}
                        </span>
                      </div>
                   </div>
                </div>
+               )}
 
                {/* Interpretation Blocks (Darmic/Life Guides) */}
               {view !== 'common' && activeMatrix && (
                 <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-[0_12px_40px_rgba(0,0,0,0.02)] mt-10" id="month-talent-interpretation-container">
-                    <div className="bg-gradient-to-br from-purple-50/50 via-indigo-50/30 to-slate-50/20 rounded-2xl p-6 md:p-8 border border-purple-100/40 relative overflow-hidden text-left">
+                    <div className="bg-gradient-to-br from-amber-50/45 via-yellow-50/15 to-slate-50/10 rounded-2xl p-6 md:p-8 border border-amber-100/45 relative overflow-hidden text-left">
                       {/* background glow effect */}
-                      <div className="absolute right-0 top-0 w-48 h-48 bg-purple-200/20 rounded-full blur-3xl pointer-events-none" />
+                      <div className="absolute right-0 top-0 w-48 h-48 bg-amber-200/15 rounded-full blur-3xl pointer-events-none" />
                       
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-500/15 to-indigo-500/15 border border-purple-200/20 flex items-center justify-center text-purple-600 shadow-[0_4px_12px_rgba(168,85,247,0.04)]">
-                            <Sparkles className="w-5.5 h-5.5 text-purple-500 animate-pulse" />
+                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400/15 via-yellow-400/10 to-amber-500/15 border border-amber-200/20 flex items-center justify-center text-amber-500 shadow-[0_4px_12px_rgba(245,158,11,0.06)] overflow-hidden">
+                             <motion.svg width="38" height="38" viewBox="0 0 40 40" fill="none" className="text-amber-500">
+                                <motion.g 
+                                  animate={{ rotate: 360 }} 
+                                  transition={{ repeat: Infinity, duration: 45, ease: "linear" }} 
+                                  style={{ transformOrigin: '20px 20px' }}
+                                >
+                                   {/* Plod życia (Fruit of Life) metatron blueprint network */}
+                                   <line x1="32.8" y1="20" x2="26.4" y2="31.08" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.2" />
+                                   <line x1="26.4" y1="31.08" x2="13.6" y2="31.08" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.2" />
+                                   <line x1="13.6" y1="31.08" x2="7.2" y2="20" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.2" />
+                                   <line x1="7.2" y1="20" x2="13.6" y2="8.92" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.2" />
+                                   <line x1="13.6" y1="8.92" x2="26.4" y2="8.92" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.2" />
+                                   <line x1="26.4" y1="8.92" x2="32.8" y2="20" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.2" />
+                                   
+                                   <line x1="20" y1="20" x2="32.8" y2="20" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.25" />
+                                   <line x1="20" y1="20" x2="26.4" y2="31.08" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.25" />
+                                   <line x1="20" y1="20" x2="13.6" y2="31.08" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.25" />
+                                   <line x1="20" y1="20" x2="7.2" y2="20" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.25" />
+                                   <line x1="20" y1="20" x2="13.6" y2="8.92" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.25" />
+                                   <line x1="20" y1="20" x2="26.4" y2="8.92" stroke="currentColor" strokeWidth="0.35" strokeOpacity="0.25" />
+
+                                   {/* Central circle */}
+                                   <circle cx="20" cy="20" r="3.2" stroke="currentColor" strokeWidth="0.75" />
+                                   {/* 12 surrounding circles on 6 axes */}
+                                   <circle cx="26.4" cy="20" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+                                   <circle cx="32.8" cy="20" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+                                   
+                                   <circle cx="23.2" cy="25.54" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+                                   <circle cx="26.4" cy="31.08" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+                                   
+                                   <circle cx="16.8" cy="25.54" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+                                   <circle cx="13.6" cy="31.08" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+                                   
+                                   <circle cx="13.6" cy="20" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+                                   <circle cx="7.2" cy="20" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+                                   
+                                   <circle cx="16.8" cy="14.46" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+                                   <circle cx="13.6" cy="8.92" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+                                   
+                                   <circle cx="23.2" cy="14.46" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+                                   <circle cx="26.4" cy="8.92" r="3.2" stroke="currentColor" strokeWidth="0.75" strokeOpacity="0.95" />
+
+                                   <motion.circle 
+                                     cx="20" cy="20" r="1.2" 
+                                     fill="currentColor" 
+                                     animate={{ scale: [0.8, 1.4, 0.8] }} 
+                                     transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }} 
+                                   />
+                                </motion.g>
+                             </motion.svg>
                           </div>
                           <div>
                             <span className="text-lg font-black tracking-tight text-slate-800 uppercase font-sans">
                               GŁÓWNY TALENT DUSZY
                             </span>
-                            <p className="text-[10px] text-slate-400 font-bold tracking-wider leading-none mt-1">INDYWIDUALNA KARTA PRZEZNACZENIA</p>
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-purple-100/30 shadow-sm shrink-0 self-start sm:self-center">
-                          <span className="text-2xl font-black text-purple-600 font-mono tracking-tighter">
+                        <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-amber-100/40 shadow-sm shrink-0 self-start sm:sm:self-center">
+                          <span className="text-2xl font-black text-amber-600 font-mono tracking-tighter">
                             {activeMatrix.B}
                           </span>
                           <div className="text-left">
@@ -603,30 +804,68 @@ export default function App() {
 
       {/* Modern minimal footer with user requested links */}
       <footer className="mt-8 border-t border-slate-200/60 pt-6 pb-12 w-full text-xs text-slate-400 font-medium relative z-10" id="app-footer">
-        <div className="max-w-[1300px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-[1300px] mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
           <span className="text-slate-400 font-mono tracking-wide text-[11px]" id="footer-copyright">
             © 2023-2026 Jmoon-numerology.com
           </span>
-          <div className="flex items-center gap-6 text-[11px] sm:text-xs" id="footer-links">
-            <a 
-              href="https://jmoon-numerology.com/regulamin" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:text-slate-600 transition-colors duration-150 decoration-transparent hover:underline"
-              id="link-regulamin"
-            >
-              Regulamin
-            </a>
-            <span className="text-slate-200">•</span>
-            <a 
-              href="https://jmoon-numerology.com/polityka_prywatnosci" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:text-slate-600 transition-colors duration-150 decoration-transparent hover:underline"
-              id="link-privacy"
-            >
-              Polityka prywatności
-            </a>
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-[11px] sm:text-xs" id="footer-links-container">
+            <div className="flex items-center gap-5 border-b sm:border-b-0 sm:border-r border-slate-200/60 pb-3 sm:pb-0 sm:pr-5 justify-center" id="footer-socials">
+              <a 
+                href="https://www.instagram.com/j.moon777/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-slate-400 hover:text-[#E1306C] transition-colors duration-200 flex items-center gap-1.5 focus:outline-none"
+                title="Instagram"
+                id="link-instagram"
+              >
+                <Instagram size={14} className="w-[14px] h-[14px]" />
+                <span className="text-[11px] font-mono">Instagram</span>
+              </a>
+              <a 
+                href="https://www.facebook.com/JuliaMoon77777/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-slate-400 hover:text-[#1877F2] transition-colors duration-200 flex items-center gap-1.5 focus:outline-none"
+                title="Facebook"
+                id="link-facebook"
+              >
+                <Facebook size={14} className="w-[14px] h-[14px]" />
+                <span className="text-[11px] font-mono">Facebook</span>
+              </a>
+              <a 
+                href="https://www.youtube.com/@JULIAMOON-777/videos" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-slate-400 hover:text-[#FF0000] transition-colors duration-200 flex items-center gap-1.5 focus:outline-none"
+                title="YouTube"
+                id="link-youtube"
+              >
+                <Youtube size={14} className="w-[14px] h-[14px]" />
+                <span className="text-[11px] font-mono">YouTube</span>
+              </a>
+            </div>
+
+            <div className="flex items-center gap-4 sm:gap-6 text-[11px] sm:text-xs" id="footer-links">
+              <a 
+                href="https://jmoon-numerology.com/regulamin" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-slate-600 transition-colors duration-150 decoration-transparent hover:underline"
+                id="link-regulamin"
+              >
+                Regulamin
+              </a>
+              <span className="text-slate-200">•</span>
+              <a 
+                href="https://jmoon-numerology.com/polityka_prywatnosci" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-slate-600 transition-colors duration-150 decoration-transparent hover:underline"
+                id="link-privacy"
+              >
+                Polityka prywatności
+              </a>
+            </div>
           </div>
         </div>
       </footer>
@@ -658,23 +897,23 @@ function InsightItem({ label, val }: { label: string; val: number }) {
 /* Health Table component custom tailored like Image 2 */
 function HealthTable({ chakras }: { chakras: any[] }) {
   const chakraSpecs = [
-    { name: '7. Sahasrara (misja)', color: 'bg-purple-600', text: 'text-purple-600' },
-    { name: '6. Ajna (los egregory)', color: 'bg-blue-600', text: 'text-blue-600' },
-    { name: '5. Vishuddha', color: 'bg-cyan-500', text: 'text-cyan-500' },
-    { name: '4. Anahata', color: 'bg-green-600', text: 'text-green-600' },
-    { name: '3. Manipura', color: 'bg-yellow-400', text: 'text-yellow-500' },
-    { name: '2. Svadhistana', color: 'bg-orange-500', text: 'text-orange-500' },
-    { name: '1. Muladhara', color: 'bg-red-600', text: 'text-red-500' },
+    { name: 'SAHASRARA', color: 'bg-purple-600', text: 'text-purple-600' },
+    { name: 'AJNA', color: 'bg-blue-600', text: 'text-blue-600' },
+    { name: 'VISHUDDHA', color: 'bg-cyan-500', text: 'text-cyan-500' },
+    { name: 'ANAHATA', color: 'bg-green-600', text: 'text-green-600' },
+    { name: 'MANIPURA', color: 'bg-yellow-400', text: 'text-yellow-500' },
+    { name: 'SVADHISTANA', color: 'bg-orange-500', text: 'text-orange-500' },
+    { name: 'MULADHARA', color: 'bg-red-600', text: 'text-red-500' },
   ];
 
   return (
     <div className="w-full">
       {/* Table Headers */}
-      <div className="grid grid-cols-4 gap-2 mb-4 pb-2 border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center">
+      <div className="grid grid-cols-[1fr_1fr_1fr_2.5fr] gap-2 mb-4 pb-2 border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center">
         <span>FIZYKA</span>
         <span>ENERGIA</span>
         <span>EMOCJA</span>
-        <span>CZAKRA</span>
+        <span className="text-left pl-3">CZAKRA</span>
       </div>
 
       {/* Row List */}
@@ -684,7 +923,7 @@ function HealthTable({ chakras }: { chakras: any[] }) {
           return (
              <div 
                key={idx} 
-               className="grid grid-cols-4 gap-2 items-center text-center py-1 transition-colors hover:bg-slate-50/50 rounded-xl"
+               className="grid grid-cols-[1fr_1fr_1fr_2.5fr] gap-2 items-center text-center py-1 transition-colors hover:bg-slate-50/50 rounded-xl"
              >
                 {/* Physical */}
                 <span className="text-base font-black text-slate-800 font-mono">
@@ -701,14 +940,17 @@ function HealthTable({ chakras }: { chakras: any[] }) {
                   {chakra.emotion}
                 </span>
 
-                {/* Chakra rounded sticker circle */}
-                <div className="flex justify-center">
+                {/* Chakra rounded sticker circle and name */}
+                <div className="flex items-center gap-2.5 pl-3 text-left">
                    <div 
-                     className={`w-8 h-8 rounded-full ${spec.color} text-white flex items-center justify-center text-xs font-black shadow-md shadow-black/5 font-mono cursor-pointer transition-transform hover:scale-105`}
+                     className={`w-7 h-7 rounded-full shrink-0 ${spec.color} text-white flex items-center justify-center text-[10px] font-black shadow-md shadow-black/5 font-mono cursor-pointer transition-transform hover:scale-105`}
                      title={spec.name}
                    >
                      {7 - idx}
                    </div>
+                   <span className="text-[11px] font-bold text-slate-700 leading-tight">
+                     {spec.name}
+                   </span>
                 </div>
              </div>
           );
@@ -716,7 +958,7 @@ function HealthTable({ chakras }: { chakras: any[] }) {
 
         {/* Total/Summary Row (Razem) */}
         {chakras[7] && (
-           <div className="grid grid-cols-4 gap-2 items-center text-center mt-5 pt-3 border-t-2 border-dashed border-slate-100">
+           <div className="grid grid-cols-[1fr_1fr_1fr_2.5fr] gap-2 items-center text-center mt-5 pt-3 border-t-2 border-dashed border-slate-100">
               <span className="text-base font-black text-slate-400 font-mono">
                 {chakras[7].physics}
               </span>
@@ -726,10 +968,11 @@ function HealthTable({ chakras }: { chakras: any[] }) {
               <span className="text-lg font-black text-slate-800 font-mono">
                 {chakras[7].emotion}
               </span>
-              <div className="flex justify-center">
-                 <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-black shadow-sm font-mono">
+              <div className="flex items-center gap-2.5 pl-3 text-left">
+                 <div className="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-black shadow-sm font-mono shrink-0">
                    Σ
                  </div>
+                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">RAZEM</span>
               </div>
            </div>
         )}

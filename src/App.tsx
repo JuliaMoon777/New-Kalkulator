@@ -204,13 +204,23 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center gap-4 mb-8"
           >
-             <div className="w-16 h-16 flex items-center justify-center transition-transform duration-500 hover:scale-105">
-                <img src="https://i.postimg.cc/wvF033Vy/Logo-no-JM.png" alt="Logo" className="w-full h-full object-contain pointer-events-none" />
-             </div>
+             <a 
+               href="https://jmoon-numerology.com" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               className="w-16 h-16 flex items-center justify-center transition-transform duration-500 hover:scale-110 cursor-pointer"
+             >
+                <img src="https://i.postimg.cc/wvF033Vy/Logo-no-JM.png" alt="Logo" className="w-full h-full object-contain" />
+             </a>
              <div>
-                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-800 uppercase font-sans">
+                <a 
+                  href="https://jmoon-numerology.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-2xl md:text-3xl font-black tracking-tight text-slate-800 uppercase font-sans hover:text-[#a855f7] transition-all duration-300 cursor-pointer block hover:scale-[1.02]"
+                >
                   Kalkulator <span className="text-[#a855f7]">Matrycy Losu</span>
-                </h1>
+                </a>
              </div>
           </motion.div>
 
@@ -805,9 +815,28 @@ export default function App() {
       {/* Modern minimal footer with user requested links */}
       <footer className="mt-8 border-t border-slate-200/60 pt-6 pb-12 w-full text-xs text-slate-400 font-medium relative z-10" id="app-footer">
         <div className="max-w-[1300px] mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
-          <span className="text-slate-400 font-mono tracking-wide text-[11px]" id="footer-copyright">
-            © 2023-2026 Jmoon-numerology.com
-          </span>
+          <div className="flex flex-col items-center md:items-start gap-1">
+            <a 
+              href="https://jmoon-numerology.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-slate-400 font-mono tracking-wide text-[11px] hover:text-[#a855f7] transition-colors duration-200 cursor-pointer"
+              id="footer-copyright"
+            >
+              © 2023-2026 Jmoon-numerology.com
+            </a>
+            <span className="text-slate-400 text-[11px]" id="footer-designer">
+              Designed and developed by{' '}
+              <a 
+                href="https://www.instagram.com/artur_creative/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-[#E1306C] font-mono font-semibold transition-colors duration-200 hover:underline"
+              >
+                Artur Creative
+              </a>
+            </span>
+          </div>
           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-[11px] sm:text-xs" id="footer-links-container">
             <div className="flex items-center gap-5 border-b sm:border-b-0 sm:border-r border-slate-200/60 pb-3 sm:pb-0 sm:pr-5 justify-center" id="footer-socials">
               <a 

@@ -278,7 +278,41 @@ export function calculateCompatibility(m1: MatrixData, m2: MatrixData): MatrixDa
   const H = combine(m1.H, m2.H);
   const I = combine(m1.I, m2.I);
 
-  return calculateMatrixFromCore(A, B, C, D, E, F, G, H, I);
+  const baseMatrix = calculateMatrixFromCore(A, B, C, D, E, F, G, H, I);
+  
+  // Hearth compatibility nodes should be combined from m1 and m2
+  const hearth = combine(m1.hearth, m2.hearth);
+  const hearthB = combine(m1.hearthB, m2.hearthB);
+  
+  // Re-build chakras with correct hearth/hearthB values
+  const chakras: ChakraData[] = [
+    { name: "SAHASRARA (misja)", physics: baseMatrix.A, energy: baseMatrix.B, emotion: reduceTo22(baseMatrix.A + baseMatrix.B) },
+    { name: "AJNA (los egregory)", physics: baseMatrix.A2, energy: baseMatrix.B2, emotion: reduceTo22(baseMatrix.A2 + baseMatrix.B2) },
+    { name: "VISHUDDHA (postrzeganie siebie)", physics: baseMatrix.A1, energy: baseMatrix.B1, emotion: reduceTo22(baseMatrix.A1 + baseMatrix.B1) },
+    { name: "ANAHATA (związki)", physics: hearth, energy: hearthB, emotion: reduceTo22(hearth + hearthB) },
+    { name: "MANIPURA (status, pieniądze)", physics: baseMatrix.E, energy: baseMatrix.E, emotion: reduceTo22(baseMatrix.E + baseMatrix.E) },
+    { name: "SVADHISTANA (radość)", physics: baseMatrix.C1, energy: baseMatrix.D1, emotion: reduceTo22(baseMatrix.C1 + baseMatrix.D1) },
+    { name: "MULADHARA (materia, ciało)", physics: baseMatrix.C, energy: baseMatrix.D, emotion: reduceTo22(baseMatrix.C + baseMatrix.D) },
+  ];
+
+  // Add total row
+  const totalPhysics = reduceTo22(chakras.reduce((s, c) => s + c.physics, 0));
+  const totalEnergy = reduceTo22(chakras.reduce((s, c) => s + c.energy, 0));
+  const totalEmotion = reduceTo22(chakras.reduce((s, c) => s + c.emotion, 0));
+  
+  chakras.push({
+    name: "RAZEM",
+    physics: totalPhysics,
+    energy: totalEnergy,
+    emotion: totalEmotion
+  });
+
+  return {
+    ...baseMatrix,
+    hearth,
+    hearthB,
+    chakras
+  };
 }
 
 export const ARCANA_NAMES: Record<number, string> = {

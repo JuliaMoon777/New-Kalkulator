@@ -1062,7 +1062,7 @@ function MatrixSvg({ data }: { data: MatrixData }) {
         <text x="335" y="152" transform="rotate(-45 335 152)" style={{ fontFamily: 'Inter, sans-serif', fontSize: '8px', fontWeight: '800', fill: '#be185d', textAnchor: 'middle' }}>Linia Kobiet</text>
 
         {/* Straight Ancestral Square (F -> G -> H -> I -> F) */}
-        <path d="M109 109 L391 109 L391 391 L109 391 Z" fill="none" stroke="#64748b" strokeWidth="1.5" strokeDasharray="4 4" />
+        <path d="M109 109 L391 109 L391 391 L109 391 Z" fill="none" stroke="#94a3b8" strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
 
         {/* Core Golden Destiny Diamond (B -> C -> D -> A -> B) */}
         <path d="M250 50 L450 250 L250 450 L50 250 Z" fill="none" stroke="url(#gold-gradient)" strokeWidth="3" filter="url(#soft-glow)" />

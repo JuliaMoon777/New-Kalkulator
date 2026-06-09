@@ -366,9 +366,19 @@ export default function App() {
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="w-full flex justify-center"
                 >
-                  {/* Styled Outer Diamond Circle with gorgeous white background and soft card styling */}
-                  <div className="w-full max-w-[500px] aspect-square relative bg-white rounded-full p-0 shadow-[0_24px_70px_rgba(0,0,0,0.06)] border border-slate-100/50 flex items-center justify-center" id="white-circle-canvas">
-                    <MatrixSvg data={activeMatrix} />
+                  {/* Styled Outer Diamond Circle with dynamic Google AI-style chakra gradient aura flowing border */}
+                  <div className="w-full max-w-[500px] aspect-square relative flex items-center justify-center p-1" id="matrix-outer-wrapper">
+                    {/* Dynamic glow layer 1 (outermost high diffusion) */}
+                    <div className="absolute -inset-4 rounded-full bg-[conic-gradient(from_0deg,#ef4444,#f97316,#eab308,#10b981,#06b6d4,#3b82f6,#a855f7,#ef4444)] animate-spin-slow opacity-40 blur-2xl" style={{ animationDuration: '6s' }} />
+                    {/* Dynamic glow layer 2 (mid diffusion) */}
+                    <div className="absolute -inset-2 rounded-full bg-[conic-gradient(from_0deg,#ef4444,#f97316,#eab308,#10b981,#06b6d4,#3b82f6,#a855f7,#ef4444)] animate-spin-slow opacity-70 blur-xl" style={{ animationDuration: '6s' }} />
+                    {/* Dynamic glow layer 3 (inner ring sharpness) */}
+                    <div className="absolute inset-[1px] rounded-full bg-[conic-gradient(from_0deg,#ef4444,#f97316,#eab308,#10b981,#06b6d4,#3b82f6,#a855f7,#ef4444)] animate-spin-slow opacity-95 blur-sm" style={{ animationDuration: '6s' }} />
+                    
+                    {/* Elegant white inner canvas */}
+                    <div className="absolute inset-[4px] bg-white rounded-full p-0 shadow-[0_24px_70px_rgba(0,0,0,0.06)] border border-slate-100/50 flex items-center justify-center z-10" id="white-circle-canvas">
+                      <MatrixSvg data={activeMatrix} />
+                    </div>
                   </div>
                 </motion.div>
               ) : (

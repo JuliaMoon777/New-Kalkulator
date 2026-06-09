@@ -367,7 +367,7 @@ export default function App() {
                   className="w-full flex justify-center"
                 >
                   {/* Styled Outer Diamond Circle with gorgeous white background and soft card styling */}
-                  <div className="w-full max-w-[500px] aspect-square relative bg-white rounded-full p-6 shadow-[0_24px_70px_rgba(0,0,0,0.06)] border border-slate-100/50 flex items-center justify-center" id="white-circle-canvas">
+                  <div className="w-full max-w-[500px] aspect-square relative bg-white rounded-full p-1.5 sm:p-2 shadow-[0_24px_70px_rgba(0,0,0,0.06)] border border-slate-100/50 flex items-center justify-center" id="white-circle-canvas">
                     <MatrixSvg data={activeMatrix} />
                   </div>
                 </motion.div>
@@ -1013,7 +1013,7 @@ function HealthTable({ chakras }: { chakras: any[] }) {
 /* Stunning minimal Matrix Svg containing precisely calculated coordinates */
 function MatrixSvg({ data }: { data: MatrixData }) {
   return (
-    <svg viewBox="0 0 500 500" className="w-full h-auto drop-shadow-sm select-none" id="matrix-svg-diagram">
+    <svg viewBox="20 20 460 460" className="w-full h-auto drop-shadow-sm select-none" id="matrix-svg-diagram">
       <defs>
         {/* Soft floating shadows for nodes */}
         <filter id="soft-shadow" x="-50%" y="-50%" width="200%" height="200%">
@@ -1066,50 +1066,50 @@ function MatrixSvg({ data }: { data: MatrixData }) {
         
         {/* Left Axis (A to E) */}
         <g filter="url(#soft-shadow)">
-          <circle cx="100" cy="250" r="10" fill="white" stroke="#3b82f6" strokeWidth="1.5" />
-          <text x="100" y="250" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#1e3a8a', textAnchor: 'middle' }}>{data.A2}</text>
+          <circle cx="100" cy="250" r="13" fill="white" stroke="#3b82f6" strokeWidth="1.75" />
+          <text x="100" y="250" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#1e3a8a', textAnchor: 'middle' }}>{data.A2}</text>
         </g>
         <g filter="url(#soft-shadow)">
-          <circle cx="150" cy="250" r="10" fill="white" stroke="#06b6d4" strokeWidth="1.5" />
-          <text x="150" y="250" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#0891b2', textAnchor: 'middle' }}>{data.A1}</text>
+          <circle cx="150" cy="250" r="13" fill="white" stroke="#06b6d4" strokeWidth="1.75" />
+          <text x="150" y="250" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#0891b2', textAnchor: 'middle' }}>{data.A1}</text>
         </g>
         <g filter="url(#soft-shadow)">
-          <circle cx="200" cy="250" r="10" fill="white" stroke="#10b981" strokeWidth="1.5" />
-          <text x="200" y="250" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#065f46', textAnchor: 'middle' }}>{data.hearth}</text>
+          <circle cx="200" cy="250" r="13" fill="white" stroke="#10b981" strokeWidth="1.75" />
+          <text x="200" y="250" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#065f46', textAnchor: 'middle' }}>{data.hearth}</text>
         </g>
 
         {/* Top Axis (B to E) */}
         <g filter="url(#soft-shadow)">
-          <circle cx="250" cy="100" r="10" fill="white" stroke="#3b82f6" strokeWidth="1.5" />
-          <text x="250" y="100" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#1e3a8a', textAnchor: 'middle' }}>{data.B2}</text>
+          <circle cx="250" cy="100" r="13" fill="white" stroke="#3b82f6" strokeWidth="1.75" />
+          <text x="250" y="100" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#1e3a8a', textAnchor: 'middle' }}>{data.B2}</text>
         </g>
         <g filter="url(#soft-shadow)">
-          <circle cx="250" cy="150" r="10" fill="white" stroke="#06b6d4" strokeWidth="1.5" />
-          <text x="250" y="150" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#0891b2', textAnchor: 'middle' }}>{data.B1}</text>
+          <circle cx="250" cy="150" r="13" fill="white" stroke="#06b6d4" strokeWidth="1.75" />
+          <text x="250" y="150" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#0891b2', textAnchor: 'middle' }}>{data.B1}</text>
         </g>
         <g filter="url(#soft-shadow)">
-          <circle cx="250" cy="200" r="10" fill="white" stroke="#10b981" strokeWidth="1.5" />
-          <text x="250" y="200" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#065f46', textAnchor: 'middle' }}>{data.hearthB}</text>
+          <circle cx="250" cy="200" r="13" fill="white" stroke="#10b981" strokeWidth="1.75" />
+          <text x="250" y="200" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#065f46', textAnchor: 'middle' }}>{data.hearthB}</text>
         </g>
 
         {/* Right Axis (C to E) */}
         <g filter="url(#soft-shadow)">
-          <circle cx="400" cy="250" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
-          <text x="400" y="250" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.C2}</text>
+          <circle cx="400" cy="250" r="13" fill="white" stroke="#1e293b" strokeWidth="1.75" />
+          <text x="400" y="250" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#1e293b', textAnchor: 'middle' }}>{data.C2}</text>
         </g>
         <g filter="url(#soft-shadow)">
-          <circle cx="350" cy="250" r="10" fill="white" stroke="#f97316" strokeWidth="1.5" />
-          <text x="350" y="250" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#c2410c', textAnchor: 'middle' }}>{data.C1}</text>
+          <circle cx="350" cy="250" r="13" fill="white" stroke="#f97316" strokeWidth="1.75" />
+          <text x="350" y="250" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#c2410c', textAnchor: 'middle' }}>{data.C1}</text>
         </g>
 
         {/* Bottom Axis (D to E) */}
         <g filter="url(#soft-shadow)">
-          <circle cx="250" cy="400" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
-          <text x="250" y="400" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.D2}</text>
+          <circle cx="250" cy="400" r="13" fill="white" stroke="#1e293b" strokeWidth="1.75" />
+          <text x="250" y="400" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#1e293b', textAnchor: 'middle' }}>{data.D2}</text>
         </g>
         <g filter="url(#soft-shadow)">
-          <circle cx="250" cy="350" r="10" fill="white" stroke="#f97316" strokeWidth="1.5" />
-          <text x="250" y="350" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#c2410c', textAnchor: 'middle' }}>{data.D1}</text>
+          <circle cx="250" cy="350" r="13" fill="white" stroke="#f97316" strokeWidth="1.75" />
+          <text x="250" y="350" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#c2410c', textAnchor: 'middle' }}>{data.D1}</text>
         </g>
 
         {/* ========================================================= */}
@@ -1118,42 +1118,42 @@ function MatrixSvg({ data }: { data: MatrixData }) {
 
         {/* Top-Left Diagonal */}
         <g filter="url(#soft-shadow)">
-          <circle cx="144.25" cy="144.25" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
-          <text x="144.25" y="144.25" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.F2}</text>
+          <circle cx="144.25" cy="144.25" r="13" fill="white" stroke="#1e293b" strokeWidth="1.75" />
+          <text x="144.25" y="144.25" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '12px', fill: '#1e293b', textAnchor: 'middle' }}>{data.F2}</text>
         </g>
         <g filter="url(#soft-shadow)">
-          <circle cx="179.5" cy="179.5" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
-          <text x="179.5" y="179.5" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.F1}</text>
+          <circle cx="179.5" cy="179.5" r="13" fill="white" stroke="#1e293b" strokeWidth="1.75" />
+          <text x="179.5" y="179.5" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '12px', fill: '#1e293b', textAnchor: 'middle' }}>{data.F1}</text>
         </g>
 
         {/* Top-Right Diagonal */}
         <g filter="url(#soft-shadow)">
-          <circle cx="355.75" cy="144.25" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
-          <text x="355.75" y="144.25" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.G2}</text>
+          <circle cx="355.75" cy="144.25" r="13" fill="white" stroke="#1e293b" strokeWidth="1.75" />
+          <text x="355.75" y="144.25" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '12px', fill: '#1e293b', textAnchor: 'middle' }}>{data.G2}</text>
         </g>
         <g filter="url(#soft-shadow)">
-          <circle cx="320.5" cy="179.5" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
-          <text x="320.5" y="179.5" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.G1}</text>
+          <circle cx="320.5" cy="179.5" r="13" fill="white" stroke="#1e293b" strokeWidth="1.75" />
+          <text x="320.5" y="179.5" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '12px', fill: '#1e293b', textAnchor: 'middle' }}>{data.G1}</text>
         </g>
 
         {/* Bottom-Right Diagonal */}
         <g filter="url(#soft-shadow)">
-          <circle cx="355.75" cy="355.75" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
-          <text x="355.75" y="355.75" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.H2}</text>
+          <circle cx="355.75" cy="355.75" r="13" fill="white" stroke="#1e293b" strokeWidth="1.75" />
+          <text x="355.75" y="355.75" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '12px', fill: '#1e293b', textAnchor: 'middle' }}>{data.H2}</text>
         </g>
         <g filter="url(#soft-shadow)">
-          <circle cx="320.5" cy="320.5" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
-          <text x="320.5" y="320.5" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.H1}</text>
+          <circle cx="320.5" cy="320.5" r="13" fill="white" stroke="#1e293b" strokeWidth="1.75" />
+          <text x="320.5" y="320.5" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '12px', fill: '#1e293b', textAnchor: 'middle' }}>{data.H1}</text>
         </g>
 
         {/* Bottom-Left Diagonal */}
         <g filter="url(#soft-shadow)">
-          <circle cx="144.25" cy="355.75" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
-          <text x="144.25" y="355.75" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.I2}</text>
+          <circle cx="144.25" cy="355.75" r="13" fill="white" stroke="#1e293b" strokeWidth="1.75" />
+          <text x="144.25" y="355.75" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '12px', fill: '#1e293b', textAnchor: 'middle' }}>{data.I2}</text>
         </g>
         <g filter="url(#soft-shadow)">
-          <circle cx="179.5" cy="320.5" r="10" fill="white" stroke="#1e293b" strokeWidth="1.5" />
-          <text x="179.5" y="320.5" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '10px', fill: '#1e293b', textAnchor: 'middle' }}>{data.I1}</text>
+          <circle cx="179.5" cy="320.5" r="13" fill="white" stroke="#1e293b" strokeWidth="1.75" />
+          <text x="179.5" y="320.5" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '950', fontSize: '12px', fill: '#1e293b', textAnchor: 'middle' }}>{data.I1}</text>
         </g>
 
         {/* ========================================================= */}
@@ -1162,8 +1162,8 @@ function MatrixSvg({ data }: { data: MatrixData }) {
 
         {/* love node (Relationship point, 275, 325) */}
         <g filter="url(#soft-shadow)">
-          <circle cx="275" cy="325" r="10" fill="white" stroke="#ec4899" strokeWidth="2" />
-          <text x="275" y="325" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#be185d', textAnchor: 'middle' }}>{data.love}</text>
+          <circle cx="275" cy="325" r="13" fill="white" stroke="#ec4899" strokeWidth="2.25" />
+          <text x="275" y="325" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#be185d', textAnchor: 'middle' }}>{data.love}</text>
         </g>
         {/* Tiny floating pink heart graphic */}
         <g transform="translate(254, 324) scale(0.65)">
@@ -1172,14 +1172,14 @@ function MatrixSvg({ data }: { data: MatrixData }) {
 
         {/* love1 node (Shared balance point, 300, 300) */}
         <g filter="url(#soft-shadow)">
-          <circle cx="300" cy="300" r="10" fill="white" stroke="#1e293b" strokeWidth="2" />
-          <text x="300" y="300" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#0f172a', textAnchor: 'middle' }}>{data.love1}</text>
+          <circle cx="300" cy="300" r="13" fill="white" stroke="#1e293b" strokeWidth="2.25" />
+          <text x="300" y="300" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#0f172a', textAnchor: 'middle' }}>{data.love1}</text>
         </g>
 
         {/* money node (Finance point, 325, 275) */}
         <g filter="url(#soft-shadow)">
-          <circle cx="325" cy="275" r="10" fill="white" stroke="#eab308" strokeWidth="2" />
-          <text x="325" y="275" dy="3.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '10px', fill: '#ca8a04', textAnchor: 'middle' }}>{data.money}</text>
+          <circle cx="325" cy="275" r="13" fill="white" stroke="#eab308" strokeWidth="2.25" />
+          <text x="325" y="275" dy="4.5" style={{ fontFamily: 'monospace', fontWeight: '900', fontSize: '12px', fill: '#ca8a04', textAnchor: 'middle' }}>{data.money}</text>
         </g>
         {/* Tiny golden dollar badge */}
         <g transform="translate(328, 258) scale(0.7)">
@@ -1192,72 +1192,72 @@ function MatrixSvg({ data }: { data: MatrixData }) {
         {/* ========================================================= */}
 
         {/* Center Focal Circle (Yellow / Gold border representing comfort zone E) */}
-        <circle cx="250" cy="250" r="22" fill="white" stroke="url(#gold-gradient)" strokeWidth="4.5" filter="url(#soft-shadow)" />
-        <text x="250" y="250" dy="5.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '16px', fill: '#b45309', textAnchor: 'middle' }}>
+        <circle cx="250" cy="250" r="28" fill="white" stroke="url(#gold-gradient)" strokeWidth="5" filter="url(#soft-shadow)" />
+        <text x="250" y="250" dy="7" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '20px', fill: '#b45309', textAnchor: 'middle' }}>
           {data.E}
         </text>
-        <text x="250" y="286" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '800', fontSize: '9px', fill: '#b45309', textAnchor: 'middle' }}>Strefa Komfortu</text>
+        <text x="250" y="294" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '800', fontSize: '10.5px', fill: '#b45309', textAnchor: 'middle' }}>Strefa Komfortu</text>
 
         {/* Top Node (B) for spiritual (20 yrs) - Purple border */}
         <g filter="url(#soft-shadow)">
-          <circle cx="250" cy="50" r="17" fill="white" stroke="#c084fc" strokeWidth="3" />
-          <text x="250" y="50" dy="5.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#7e22ce', textAnchor: 'middle' }}>
+          <circle cx="250" cy="50" r="22" fill="white" stroke="#c084fc" strokeWidth="3.5" />
+          <text x="250" y="50" dy="6" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '16px', fill: '#7e22ce', textAnchor: 'middle' }}>
             {data.B}
           </text>
         </g>
 
         {/* Left Node (A) for birth (0 yrs) - Purple border */}
         <g filter="url(#soft-shadow)">
-          <circle cx="50" cy="250" r="17" fill="white" stroke="#c084fc" strokeWidth="3" />
-          <text x="50" y="250" dy="5.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#7e22ce', textAnchor: 'middle' }}>
+          <circle cx="50" cy="250" r="22" fill="white" stroke="#c084fc" strokeWidth="3.5" />
+          <text x="50" y="250" dy="6" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '16px', fill: '#7e22ce', textAnchor: 'middle' }}>
             {data.A}
           </text>
         </g>
 
         {/* Bottom Node (D) for ancestral/karma (60 yrs) - Red border */}
         <g filter="url(#soft-shadow)">
-          <circle cx="250" cy="450" r="17" fill="white" stroke="#f87171" strokeWidth="3" />
-          <text x="250" y="450" dy="5.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#dc2626', textAnchor: 'middle' }}>
+          <circle cx="250" cy="450" r="22" fill="white" stroke="#f87171" strokeWidth="3.5" />
+          <text x="250" y="450" dy="6" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '16px', fill: '#dc2626', textAnchor: 'middle' }}>
             {data.D}
           </text>
         </g>
 
         {/* Right Node (C) for material/finance (40 yrs) - Orange/Red border */}
         <g filter="url(#soft-shadow)">
-          <circle cx="450" cy="250" r="17" fill="white" stroke="#f87171" strokeWidth="3" />
-          <text x="450" y="250" dy="5.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#dc2626', textAnchor: 'middle' }}>
+          <circle cx="450" cy="250" r="22" fill="white" stroke="#f87171" strokeWidth="3.5" />
+          <text x="450" y="250" dy="6" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '16px', fill: '#dc2626', textAnchor: 'middle' }}>
             {data.C}
           </text>
         </g>
 
         {/* Top-Left node (F) (10 yrs) - Slate border */}
         <g filter="url(#soft-shadow)">
-          <circle cx="109" cy="109" r="15" fill="white" stroke="#475569" strokeWidth="2" />
-          <text x="109" y="109" dy="4.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '12px', fill: '#334155', textAnchor: 'middle' }}>
+          <circle cx="109" cy="109" r="18" fill="white" stroke="#475569" strokeWidth="2.5" />
+          <text x="109" y="109" dy="5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#334155', textAnchor: 'middle' }}>
             {data.F}
           </text>
         </g>
 
         {/* Top-Right node (G) (30 yrs) - Slate border */}
         <g filter="url(#soft-shadow)">
-          <circle cx="391" cy="109" r="15" fill="white" stroke="#475569" strokeWidth="2" />
-          <text x="391" y="109" dy="4.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '12px', fill: '#334155', textAnchor: 'middle' }}>
+          <circle cx="391" cy="109" r="18" fill="white" stroke="#475569" strokeWidth="2.5" />
+          <text x="391" y="109" dy="5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#334155', textAnchor: 'middle' }}>
             {data.G}
           </text>
         </g>
 
         {/* Bottom-Right node (H) (50 yrs) - Slate border */}
         <g filter="url(#soft-shadow)">
-          <circle cx="391" cy="391" r="15" fill="white" stroke="#475569" strokeWidth="2" />
-          <text x="391" y="391" dy="4.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '12px', fill: '#334155', textAnchor: 'middle' }}>
+          <circle cx="391" cy="391" r="18" fill="white" stroke="#475569" strokeWidth="2.5" />
+          <text x="391" y="391" dy="5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#334155', textAnchor: 'middle' }}>
             {data.H}
           </text>
         </g>
 
         {/* Bottom-Left node (I) (70 yrs) - Slate border */}
         <g filter="url(#soft-shadow)">
-          <circle cx="109" cy="391" r="15" fill="white" stroke="#475569" strokeWidth="2" />
-          <text x="109" y="391" dy="4.5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '12px', fill: '#334155', textAnchor: 'middle' }}>
+          <circle cx="109" cy="391" r="18" fill="white" stroke="#475569" strokeWidth="2.5" />
+          <text x="109" y="391" dy="5" style={{ fontFamily: 'Outfit, Inter, sans-serif', fontWeight: '900', fontSize: '14px', fill: '#334155', textAnchor: 'middle' }}>
             {data.I}
           </text>
         </g>

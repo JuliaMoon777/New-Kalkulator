@@ -267,51 +267,110 @@ export function calculateMatrix(birthdate: string): MatrixData {
 
 export function calculateCompatibility(m1: MatrixData, m2: MatrixData): MatrixData {
   const combine = (p1: number, p2: number) => reduceTo22(p1 + p2);
-  
-  const A = combine(m1.A, m2.A);
-  const B = combine(m1.B, m2.B);
-  const C = combine(m1.C, m2.C);
-  const D = combine(m1.D, m2.D);
-  const E = combine(m1.E, m2.E);
-  const F = combine(m1.F, m2.F);
-  const G = combine(m1.G, m2.G);
-  const H = combine(m1.H, m2.H);
-  const I = combine(m1.I, m2.I);
 
-  const baseMatrix = calculateMatrixFromCore(A, B, C, D, E, F, G, H, I);
-  
-  // Hearth compatibility nodes should be combined from m1 and m2
-  const hearth = combine(m1.hearth, m2.hearth);
-  const hearthB = combine(m1.hearthB, m2.hearthB);
-  
-  // Re-build chakras with correct hearth/hearthB values
-  const chakras: ChakraData[] = [
-    { name: "SAHASRARA (misja)", physics: baseMatrix.A, energy: baseMatrix.B, emotion: reduceTo22(baseMatrix.A + baseMatrix.B) },
-    { name: "AJNA (los egregory)", physics: baseMatrix.A2, energy: baseMatrix.B2, emotion: reduceTo22(baseMatrix.A2 + baseMatrix.B2) },
-    { name: "VISHUDDHA (postrzeganie siebie)", physics: baseMatrix.A1, energy: baseMatrix.B1, emotion: reduceTo22(baseMatrix.A1 + baseMatrix.B1) },
-    { name: "ANAHATA (związki)", physics: hearth, energy: hearthB, emotion: reduceTo22(hearth + hearthB) },
-    { name: "MANIPURA (status, pieniądze)", physics: baseMatrix.E, energy: baseMatrix.E, emotion: reduceTo22(baseMatrix.E + baseMatrix.E) },
-    { name: "SVADHISTANA (radość)", physics: baseMatrix.C1, energy: baseMatrix.D1, emotion: reduceTo22(baseMatrix.C1 + baseMatrix.D1) },
-    { name: "MULADHARA (materia, ciało)", physics: baseMatrix.C, energy: baseMatrix.D, emotion: reduceTo22(baseMatrix.C + baseMatrix.D) },
-  ];
+  const agePoints: Record<number, number> = {};
+  for (const ageKey of Object.keys(m1.agePoints)) {
+    const age = Number(ageKey);
+    agePoints[age] = combine(m1.agePoints[age] || 0, m2.agePoints[age] || 0);
+  }
 
-  // Add total row
-  const totalPhysics = reduceTo22(chakras.reduce((s, c) => s + c.physics, 0));
-  const totalEnergy = reduceTo22(chakras.reduce((s, c) => s + c.energy, 0));
-  const totalEmotion = reduceTo22(chakras.reduce((s, c) => s + c.emotion, 0));
-  
-  chakras.push({
-    name: "RAZEM",
-    physics: totalPhysics,
-    energy: totalEnergy,
-    emotion: totalEmotion
+  const chakras: ChakraData[] = m1.chakras.map((c1, idx) => {
+    const c2 = m2.chakras[idx];
+    return {
+      name: c1.name,
+      physics: combine(c1.physics, c2 ? c2.physics : 0),
+      energy: combine(c1.energy, c2 ? c2.energy : 0),
+      emotion: combine(c1.emotion, c2 ? c2.emotion : 0),
+    };
   });
 
+  const combA = combine(m1.A, m2.A);
+  const combB = combine(m1.B, m2.B);
+  const combC = combine(m1.C, m2.C);
+  const combD = combine(m1.D, m2.D);
+  const combE = combine(m1.E, m2.E);
+  const combF = combine(m1.F, m2.F);
+  const combG = combine(m1.G, m2.G);
+  const combH = combine(m1.H, m2.H);
+  const combI = combine(m1.I, m2.I);
+
+  const skyVal = combine(combB, combD);
+  const earthVal = combine(combA, combC);
+  const personalVal = combine(skyVal, earthVal);
+
+  const maleVal = combine(combF, combH);
+  const femaleVal = combine(combG, combI);
+  const socialVal = combine(maleVal, femaleVal);
+
+  const spiritualVal = combine(personalVal, socialVal);
+  const planetaryVal = combine(socialVal, spiritualVal);
+
   return {
-    ...baseMatrix,
-    hearth,
-    hearthB,
-    chakras
+    A: combA,
+    B: combB,
+    C: combC,
+    D: combD,
+    E: combE,
+    F: combF,
+    G: combG,
+    H: combH,
+    I: combI,
+    
+    A1: combine(m1.A1, m2.A1),
+    A2: combine(m1.A2, m2.A2),
+    hearth: combine(m1.hearth, m2.hearth),
+    
+    B1: combine(m1.B1, m2.B1),
+    B2: combine(m1.B2, m2.B2),
+    hearthB: combine(m1.hearthB, m2.hearthB),
+    
+    C1: combine(m1.C1, m2.C1),
+    C2: combine(m1.C2, m2.C2),
+    hearthC: combine(m1.hearthC, m2.hearthC),
+    
+    D1: combine(m1.D1, m2.D1),
+    D2: combine(m1.D2, m2.D2),
+    hearthD: combine(m1.hearthD, m2.hearthD),
+    
+    F1: combine(m1.F1, m2.F1),
+    F2: combine(m1.F2, m2.F2),
+    F3: combine(m1.F3, m2.F3),
+    
+    G1: combine(m1.G1, m2.G1),
+    G2: combine(m1.G2, m2.G2),
+    G3: combine(m1.G3, m2.G3),
+    
+    H1: combine(m1.H1, m2.H1),
+    H2: combine(m1.H2, m2.H2),
+    H3: combine(m1.H3, m2.H3),
+    
+    I1: combine(m1.I1, m2.I1),
+    I2: combine(m1.I2, m2.I2),
+    I3: combine(m1.I3, m2.I3),
+    
+    love: combine(m1.love, m2.love),
+    love1: combine(m1.love1, m2.love1),
+    love2: combine(m1.love2, m2.love2),
+    
+    money: combine(m1.money, m2.money),
+    money1: combine(m1.money1, m2.money1),
+    money2: combine(m1.money2, m2.money2),
+    
+    sky: skyVal,
+    earth: earthVal,
+    personal: personalVal,
+    male: maleVal,
+    female: femaleVal,
+    social: socialVal,
+    spiritual: spiritualVal,
+    planetary: planetaryVal,
+    
+    ancestralStrength: combine(m1.ancestralStrength, m2.ancestralStrength),
+    internalPower: combine(m1.internalPower, m2.internalPower),
+    karmic: combine(m1.karmic, m2.karmic),
+    
+    agePoints,
+    chakras,
   };
 }
 

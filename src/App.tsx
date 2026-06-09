@@ -367,7 +367,7 @@ export default function App() {
                   className="w-full flex justify-center"
                 >
                   {/* Styled Outer Diamond Circle with gorgeous white background and soft card styling */}
-                  <div className="w-full max-w-[500px] aspect-square relative bg-white rounded-full p-1.5 sm:p-2 shadow-[0_24px_70px_rgba(0,0,0,0.06)] border border-slate-100/50 flex items-center justify-center" id="white-circle-canvas">
+                  <div className="w-full max-w-[500px] aspect-square relative bg-white rounded-full p-0 shadow-[0_24px_70px_rgba(0,0,0,0.06)] border border-slate-100/50 flex items-center justify-center" id="white-circle-canvas">
                     <MatrixSvg data={activeMatrix} />
                   </div>
                 </motion.div>
@@ -1013,7 +1013,7 @@ function HealthTable({ chakras }: { chakras: any[] }) {
 /* Stunning minimal Matrix Svg containing precisely calculated coordinates */
 function MatrixSvg({ data }: { data: MatrixData }) {
   return (
-    <svg viewBox="20 20 460 460" className="w-full h-auto drop-shadow-sm select-none" id="matrix-svg-diagram">
+    <svg viewBox="26 26 448 448" className="w-full h-auto drop-shadow-sm select-none" id="matrix-svg-diagram">
       <defs>
         {/* Soft floating shadows for nodes */}
         <filter id="soft-shadow" x="-50%" y="-50%" width="200%" height="200%">
